@@ -1,7 +1,12 @@
-from app import create_app
-from models.user import User, Role
-from extensions import db
+import sys
 import os
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app import create_app
+from app.models.user import User, Role
+from app.extensions import db
 
 def create_admin_user():
     app = create_app()

@@ -2,58 +2,54 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from app.models.user import User
 from app.extensions import db
-from datetime import timedelta
 
-bp = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
+auth_bp = Blueprint('auth', __name__)
 
-@bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
     
-    if not data or not data.get('email') or not data.get('password'):
-        return jsonify({'error': 'Missing email or password'}), 400
-        
-    user = User.query.filter_by(email=data['email']).first()
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
     
-    if not user or not user.check_password(data['password']):
+    user = User.query.filter_by(email=email).first()
+    if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid email or password'}), 401
-        
+    
     if not user.is_active:
-        return jsonify({'error': 'User account is inactive'}), 403
-        
+        return jsonify({'error': 'Account is deactivated'}), 401
+    
     # Create tokens
-    access_token = create_access_token(
-        identity=user.id,
-        expires_delta=timedelta(minutes=15)
-    )
-    refresh_token = create_refresh_token(
-        identity=user.id,
-        expires_delta=timedelta(days=7)
-    )
+    access_token = create_access_token(identity=user.id)
+    refresh_token = create_refresh_token(identity=user.id)
     
     return jsonify({
         'access_token': access_token,
         'refresh_token': refresh_token,
         'user': user.to_dict()
-    }), 200
+    })
 
-@bp.route('/refresh', methods=['POST'])
+@auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
     current_user_id = get_jwt_identity()
-    access_token = create_access_token(
-        identity=current_user_id,
-        expires_delta=timedelta(minutes=15)
-    )
-    return jsonify({'access_token': access_token}), 200
+    user = User.query.get(current_user_id)
+    
+    if not user or not user.is_active:
+        return jsonify({'error': 'Invalid user'}), 401
+    
+    access_token = create_access_token(identity=current_user_id)
+    return jsonify({'access_token': access_token})
 
-@bp.route('/me', methods=['GET'])
+@auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-        
-    return jsonify({'user': user.to_dict()}), 200 
+    if not user or not user.is_active:
+        return jsonify({'error': 'Invalid user'}), 401
+    
+    return jsonify(user.to_dict()) 
