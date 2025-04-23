@@ -5,8 +5,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
-from app.models.user import Role, Permission
-from app.extensions import db
+from models.user import Role, Permission
+from extensions import db
 
 def init_roles_and_permissions():
     """

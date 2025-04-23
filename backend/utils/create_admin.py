@@ -5,8 +5,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
-from app.models.user import User, Role
-from app.extensions import db
+from models.user import User, Role
+from extensions import db
 
 def create_admin_user():
     app = create_app()
@@ -21,6 +21,8 @@ def create_admin_user():
         admin = User(
             username='admin',
             email='admin@example.com',
+            first_name='Admin',
+            last_name='User',
         )
         admin.set_password('admin123')  # Hash the password
 
@@ -31,7 +33,7 @@ def create_admin_user():
             return
 
         # Add admin role to user
-        admin.roles.append(admin_role)
+        admin.add_role(admin_role)
 
         # Save to database
         db.session.add(admin)
