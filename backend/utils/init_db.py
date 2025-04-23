@@ -14,9 +14,6 @@ def init_roles_and_permissions():
     """
     app = create_app()
     
-    # Make sure db is initialized with the app
-    db.init_app(app)
-    
     with app.app_context():
         # Create database tables if they don't exist
         db.create_all()
