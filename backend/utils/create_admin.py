@@ -10,6 +10,10 @@ from extensions import db
 
 def create_admin_user():
     app = create_app()
+    
+    # Make sure db is initialized with the app
+    db.init_app(app)
+    
     with app.app_context():
         # Check if admin user already exists
         admin = User.query.filter_by(username='admin').first()
