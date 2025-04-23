@@ -21,7 +21,6 @@ def create_admin_user():
         admin = User(
             username='admin',
             email='admin@example.com',
-            password='admin123'  # You should change this in production
         )
         admin.set_password('admin123')  # Hash the password
 
