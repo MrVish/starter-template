@@ -67,7 +67,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useSession } from 'next-auth/react';
 
 // Enhanced BIEmbed component with more features
-const BIEmbed = () => {
+const MarketingAnalyticsEmbed = () => {
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [activeView, setActiveView] = React.useState('performance');
   const [isLoading, setIsLoading] = React.useState(false);
@@ -83,7 +83,7 @@ const BIEmbed = () => {
       <CardBody>
         <Flex direction="column" h="100%">
           <Flex justify="space-between" align="center" mb={4}>
-            <Heading size="md">Analytics Dashboard</Heading>
+            <Heading size="md">Marketing Performance Overview</Heading>
             <HStack spacing={2}>
               <IconButton
                 aria-label="Refresh data"
@@ -117,9 +117,9 @@ const BIEmbed = () => {
 
           <Tabs variant="soft-rounded" colorScheme="blue" mb={4}>
             <TabList>
-              <Tab>Performance</Tab>
-              <Tab>Risk Metrics</Tab>
-              <Tab>Trends</Tab>
+              <Tab>Campaign Performance</Tab>
+              <Tab>Audience Insights</Tab>
+              <Tab>Conversion Trends</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
@@ -131,17 +131,17 @@ const BIEmbed = () => {
                   <Grid templateColumns="repeat(2, 1fr)" gap={4}>
                     <GridItem colSpan={2}>
                       <Box bg="gray.50" p={4} borderRadius="lg" height="200px">
-                        <Text>Performance Chart</Text>
+                        <Text>Campaign Performance Metrics</Text>
                       </Box>
                     </GridItem>
                     <GridItem>
                       <Box bg="gray.50" p={4} borderRadius="lg" height="150px">
-                        <Text>Metrics Overview</Text>
+                        <Text>Channel Distribution</Text>
                       </Box>
                     </GridItem>
                     <GridItem>
                       <Box bg="gray.50" p={4} borderRadius="lg" height="150px">
-                        <Text>Key Indicators</Text>
+                        <Text>ROI Analysis</Text>
                       </Box>
                     </GridItem>
                   </Grid>
@@ -149,12 +149,12 @@ const BIEmbed = () => {
               </TabPanel>
               <TabPanel>
                 <Box bg="gray.50" p={4} borderRadius="lg" height="350px">
-                  <Text>Risk Metrics Dashboard</Text>
+                  <Text>Customer Segmentation Dashboard</Text>
                 </Box>
               </TabPanel>
               <TabPanel>
                 <Box bg="gray.50" p={4} borderRadius="lg" height="350px">
-                  <Text>Trend Analysis</Text>
+                  <Text>Conversion Funnel Analysis</Text>
                 </Box>
               </TabPanel>
             </TabPanels>
@@ -196,8 +196,8 @@ const StatCard = ({ label, value, change, icon, color }) => (
 // New component for notifications
 const NotificationsMenu = () => {
   const notifications = [
-    { id: 1, title: 'Model Training Complete', message: 'Credit Risk Model v2.1 is ready for review', time: '10 min ago' },
-    { id: 2, title: 'New Assessment Required', message: 'Fraud Detection Model needs quarterly assessment', time: '1 hour ago' },
+    { id: 1, title: 'Campaign Completed', message: 'Summer Promotion campaign has ended, view results', time: '10 min ago' },
+    { id: 2, title: 'Audience Segment Ready', message: 'New customer segment "High-Value Prospects" is ready', time: '1 hour ago' },
     { id: 3, title: 'System Update', message: 'Platform maintenance scheduled for tomorrow', time: '2 hours ago' },
   ];
 
@@ -244,30 +244,18 @@ const NotificationsMenu = () => {
   );
 };
 
-// Metrics options for assessment
+// Marketing metrics options
 const METRICS_OPTIONS = [
-  { id: 'accuracy', label: 'Accuracy', category: 'Performance' },
-  { id: 'precision', label: 'Precision', category: 'Performance' },
-  { id: 'recall', label: 'Recall', category: 'Performance' },
-  { id: 'f1', label: 'F1 Score', category: 'Performance' },
-  { id: 'auc', label: 'AUC-ROC', category: 'Performance' },
-  { id: 'mae', label: 'Mean Absolute Error', category: 'Regression' },
-  { id: 'mse', label: 'Mean Squared Error', category: 'Regression' },
-  { id: 'rmse', label: 'Root Mean Squared Error', category: 'Regression' },
-  { id: 'mape', label: 'Mean Absolute Percentage Error', category: 'Regression' },
-  { id: 'r2', label: 'R-squared', category: 'Regression' },
-  { id: 'silhouette', label: 'Silhouette Score', category: 'Clustering' },
-  { id: 'calinski', label: 'Calinski-Harabasz Score', category: 'Clustering' },
-  { id: 'davies', label: 'Davies-Bouldin Score', category: 'Clustering' },
-  { id: 'bias_gender', label: 'Gender Bias Score', category: 'Fairness' },
-  { id: 'bias_age', label: 'Age Bias Score', category: 'Fairness' },
-  { id: 'bias_ethnicity', label: 'Ethnicity Bias Score', category: 'Fairness' },
-  { id: 'drift_feature', label: 'Feature Drift Score', category: 'Drift' },
-  { id: 'drift_target', label: 'Target Drift Score', category: 'Drift' },
-  { id: 'drift_prediction', label: 'Prediction Drift Score', category: 'Drift' },
-  { id: 'latency', label: 'Inference Latency', category: 'Performance' },
-  { id: 'memory', label: 'Memory Usage', category: 'Performance' },
-  { id: 'cpu', label: 'CPU Usage', category: 'Performance' },
+  { id: 'impressions', label: 'Impressions', category: 'Awareness' },
+  { id: 'reach', label: 'Reach', category: 'Awareness' },
+  { id: 'ctr', label: 'Click-Through Rate', category: 'Engagement' },
+  { id: 'conversionRate', label: 'Conversion Rate', category: 'Conversion' },
+  { id: 'costPerClick', label: 'Cost Per Click', category: 'Cost' },
+  { id: 'costPerConversion', label: 'Cost Per Conversion', category: 'Cost' },
+  { id: 'roas', label: 'Return on Ad Spend', category: 'ROI' },
+  { id: 'roi', label: 'Return on Investment', category: 'ROI' },
+  { id: 'customerAcquisitionCost', label: 'Customer Acquisition Cost', category: 'Cost' },
+  { id: 'customerLifetimeValue', label: 'Customer Lifetime Value', category: 'Value' },
 ];
 
 // Group metrics by category
@@ -281,779 +269,710 @@ const GROUPED_METRICS = METRICS_OPTIONS.reduce((acc, metric) => {
 
 export default function Dashboard() {
   const { data: session } = useSession();
-  const cardBg = useColorModeValue('white', 'secondary.800');
   const toast = useToast();
   
-  // Modal controls
-  const {
-    isOpen: isNewModelOpen,
-    onOpen: onNewModelOpen,
-    onClose: onNewModelClose
+  // Modal states
+  const { 
+    isOpen: isNewCampaignOpen, 
+    onOpen: onNewCampaignOpen, 
+    onClose: onNewCampaignClose 
   } = useDisclosure();
   
-  const {
-    isOpen: isNewAssessmentOpen,
-    onOpen: onNewAssessmentOpen,
-    onClose: onNewAssessmentClose
+  const { 
+    isOpen: isNewSegmentOpen, 
+    onOpen: onNewSegmentOpen, 
+    onClose: onNewSegmentClose 
   } = useDisclosure();
-
-  const {
-    isOpen: isUploadDatasetOpen,
-    onOpen: onUploadDatasetOpen,
-    onClose: onUploadDatasetClose
+  
+  const { 
+    isOpen: isUploadOpen, 
+    onOpen: onUploadOpen, 
+    onClose: onUploadClose 
   } = useDisclosure();
-
-  const {
-    isOpen: isExportOpen,
-    onOpen: onExportOpen,
-    onClose: onExportClose
-  } = useDisclosure();
-
-  // Upload state
-  const [uploadProgress, setUploadProgress] = React.useState(0);
-  const [isUploading, setIsUploading] = React.useState(false);
-
+  
   // Form states
-  const [modelFormData, setModelFormData] = React.useState({
+  const [campaignForm, setCampaignForm] = React.useState({
     name: '',
-    type: '',
-    description: '',
-    dataset: '',
-    hyperparameters: '',
-    targetMetric: '',
-    targetThreshold: '',
-    version: '1.0.0'
+    type: 'email',
+    budget: '',
+    startDate: '',
+    endDate: '',
+    goal: ''
   });
-
-  const [assessmentFormData, setAssessmentFormData] = React.useState({
+  
+  const [segmentForm, setSegmentForm] = React.useState({
     name: '',
-    model: '',
-    type: '',
-    notes: '',
-    metrics: [],
-    threshold: '',
-    frequency: 'monthly',
-    owner: ''
+    criteria: '',
+    description: ''
   });
+  
+  const [selectedMetrics, setSelectedMetrics] = React.useState(['impressions', 'ctr', 'conversionRate', 'roi']);
 
-  // Handle model form changes
-  const handleModelFormChange = (e) => {
+  const handleCampaignFormChange = (e) => {
     const { name, value } = e.target;
-    setModelFormData(prev => ({
-      ...prev,
+    setCampaignForm({
+      ...campaignForm,
       [name]: value
-    }));
+    });
   };
 
-  // Handle assessment form changes
-  const handleAssessmentFormChange = (e) => {
+  const handleSegmentFormChange = (e) => {
     const { name, value } = e.target;
-    setAssessmentFormData(prev => ({
-      ...prev,
+    setSegmentForm({
+      ...segmentForm,
       [name]: value
-    }));
+    });
   };
 
-  // Handle metrics selection
   const handleMetricsChange = (selectedMetrics) => {
-    setAssessmentFormData(prev => ({
-      ...prev,
-      metrics: selectedMetrics
-    }));
+    setSelectedMetrics(selectedMetrics);
   };
 
-  // Handle form submissions
-  const handleNewModel = (e) => {
+  const handleNewCampaign = (e) => {
     e.preventDefault();
-    // Add model creation logic here
-    toast({
-      title: 'Model Created',
-      description: `${modelFormData.name} has been created successfully.`,
-      status: 'success',
-      duration: 5000,
-      isClosable: true,
-    });
-    setModelFormData({
-      name: '',
-      type: '',
-      description: '',
-      dataset: '',
-      hyperparameters: '',
-      targetMetric: '',
-      targetThreshold: '',
-      version: '1.0.0'
-    });
-    onNewModelClose();
-  };
-
-  const handleNewAssessment = (e) => {
-    e.preventDefault();
-    // Add assessment creation logic here
-    toast({
-      title: 'Assessment Created',
-      description: `New risk assessment for ${assessmentFormData.model} has been created.`,
-      status: 'success',
-      duration: 5000,
-      isClosable: true,
-    });
-    setAssessmentFormData({
-      name: '',
-      model: '',
-      type: '',
-      notes: '',
-      metrics: [],
-      threshold: '',
-      frequency: 'monthly',
-      owner: ''
-    });
-    onNewAssessmentClose();
-  };
-
-  // Handle dataset upload
-  const handleDatasetUpload = (e) => {
-    e.preventDefault();
-    setIsUploading(true);
     
-    // Simulate upload progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setUploadProgress(progress);
-      
-      if (progress >= 100) {
-        clearInterval(interval);
-        setIsUploading(false);
-        onUploadDatasetClose();
-        toast({
-          title: 'Dataset Uploaded',
-          description: 'Your dataset has been successfully uploaded and processed.',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
-        setUploadProgress(0);
-      }
-    }, 500);
-  };
-
-  // Handle export
-  const handleExport = (format) => {
-    toast({
-      title: 'Export Started',
-      description: `Exporting data in ${format.toUpperCase()} format...`,
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
-    onExportClose();
-
-    // Simulate export
+    // Add validation here if needed
+    
+    // Simulate API request
     setTimeout(() => {
       toast({
-        title: 'Export Complete',
-        description: `Data has been exported in ${format.toUpperCase()} format.`,
+        title: 'Campaign created.',
+        description: `Successfully created campaign: ${campaignForm.name}`,
         status: 'success',
         duration: 5000,
         isClosable: true,
       });
+      
+      setCampaignForm({
+        name: '',
+        type: 'email',
+        budget: '',
+        startDate: '',
+        endDate: '',
+        goal: ''
+      });
+      
+      onNewCampaignClose();
+    }, 800);
+  };
+
+  const handleNewSegment = (e) => {
+    e.preventDefault();
+    
+    // Add validation here if needed
+    
+    // Simulate API request
+    setTimeout(() => {
+      toast({
+        title: 'Audience segment created.',
+        description: `Successfully created segment: ${segmentForm.name}`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      setSegmentForm({
+        name: '',
+        criteria: '',
+        description: ''
+      });
+      
+      onNewSegmentClose();
+    }, 800);
+  };
+
+  const handleDatasetUpload = (e) => {
+    e.preventDefault();
+    
+    // Simulate file upload
+    toast({
+      title: 'File upload started',
+      description: "We've started processing your data file",
+      status: 'info',
+      duration: 2000,
+      isClosable: true,
+    });
+    
+    // Simulate processing
+    setTimeout(() => {
+      toast({
+        title: 'Data import complete',
+        description: "Your marketing data has been successfully imported",
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      onUploadClose();
     }, 2000);
   };
-  
+
+  const handleExport = (format) => {
+    toast({
+      title: `Exporting data as ${format.toUpperCase()}`,
+      description: "Your report will be ready for download shortly",
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  if (!session) {
+    return (
+      <Flex 
+        h="100vh" 
+        align="center" 
+        justify="center" 
+        direction="column"
+        p={5}
+      >
+        <Heading mb={6}>Sign in to access the dashboard</Heading>
+        <Button 
+          colorScheme="blue" 
+          onClick={() => window.location.href = '/auth/signin'}
+        >
+          Sign In
+        </Button>
+      </Flex>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <Box mb={6}>
-        <Flex justify="space-between" align="center" mb={6}>
-          <Heading as="h1" size="xl" color="secondary.700">
-            Dashboard
-          </Heading>
-          <HStack spacing={4}>
-            <NotificationsMenu />
+      <Box>
+        <Flex 
+          direction={{ base: 'column', md: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'flex-start', md: 'center' }} 
+          mb={8}
+          gap={3}
+        >
+          <Box>
+            <Heading as="h1" size="lg">Marketing Analytics Dashboard</Heading>
+            <Text color="gray.500">Welcome back, {session?.user?.name || 'User'}</Text>
+          </Box>
+          
+          <HStack spacing={3}>
             <Button
               leftIcon={<FiPlus />}
               colorScheme="blue"
-              onClick={onNewModelOpen}
-              size="md"
-              px={6}
-              fontWeight="medium"
-              _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
+              onClick={onNewCampaignOpen}
             >
-              New Model
+              New Campaign
             </Button>
             <Button
               leftIcon={<FiPlus />}
-              colorScheme="green"
-              onClick={onNewAssessmentOpen}
-              size="md"
-              px={6}
-              fontWeight="medium"
-              _hover={{ transform: 'translateY(-1px)', boxShadow: 'lg' }}
+              variant="outline"
+              onClick={onNewSegmentOpen}
             >
-              New Assessment
+              New Segment
+            </Button>
+            <Button
+              leftIcon={<FiUpload />}
+              variant="ghost"
+              onClick={onUploadOpen}
+            >
+              Import Data
             </Button>
             <Menu>
               <MenuButton
-                as={IconButton}
-                icon={<FiMoreVertical />}
+                as={Button}
+                rightIcon={<FiDownload />}
                 variant="ghost"
-                aria-label="More actions"
-                size="md"
-                _hover={{ bg: 'gray.100' }}
-              />
+              >
+                Export
+              </MenuButton>
               <MenuList>
-                <MenuItem 
-                  icon={<FiUpload />} 
-                  onClick={onUploadDatasetOpen}
-                  _hover={{ bg: 'gray.100' }}
-                >
-                  Upload Dataset
-                </MenuItem>
-                <MenuItem 
-                  icon={<FiDownload />} 
-                  onClick={onExportOpen}
-                  _hover={{ bg: 'gray.100' }}
-                >
-                  Export Data
-                </MenuItem>
+                <MenuItem onClick={() => handleExport('csv')}>CSV</MenuItem>
+                <MenuItem onClick={() => handleExport('excel')}>Excel</MenuItem>
+                <MenuItem onClick={() => handleExport('pdf')}>PDF Report</MenuItem>
               </MenuList>
             </Menu>
+            <NotificationsMenu />
           </HStack>
         </Flex>
-      </Box>
-
-      {/* New Model Modal */}
-      <Modal isOpen={isNewModelOpen} onClose={onNewModelClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <form onSubmit={handleNewModel}>
-            <ModalHeader>Create New Model</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Model Name</FormLabel>
-                  <Input
-                    name="name"
-                    value={modelFormData.name}
-                    onChange={handleModelFormChange}
-                    placeholder="e.g., Credit Risk Classifier v2"
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Model Type</FormLabel>
-                  <Select
-                    name="type"
-                    value={modelFormData.type}
-                    onChange={handleModelFormChange}
-                    placeholder="Select model type"
-                  >
-                    <option value="classification">Classification</option>
-                    <option value="regression">Regression</option>
-                    <option value="clustering">Clustering</option>
-                    <option value="nlp">Natural Language Processing</option>
-                    <option value="timeseries">Time Series</option>
-                  </Select>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea
-                    name="description"
-                    value={modelFormData.description}
-                    onChange={handleModelFormChange}
-                    placeholder="Enter model description and purpose"
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Dataset</FormLabel>
-                  <Select
-                    name="dataset"
-                    value={modelFormData.dataset}
-                    onChange={handleModelFormChange}
-                    placeholder="Select dataset"
-                  >
-                    <option value="customer_transactions">Customer Transactions</option>
-                    <option value="user_demographics">User Demographics</option>
-                    <option value="financial_data">Financial Data</option>
-                    <option value="market_data">Market Data</option>
-                  </Select>
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Hyperparameters</FormLabel>
-                  <Textarea
-                    name="hyperparameters"
-                    value={modelFormData.hyperparameters}
-                    onChange={handleModelFormChange}
-                    placeholder="Enter model hyperparameters in JSON format"
-                  />
-                </FormControl>
-                <Grid templateColumns="repeat(2, 1fr)" gap={4} width="100%">
-                  <FormControl isRequired>
-                    <FormLabel>Target Metric</FormLabel>
-                    <Select
-                      name="targetMetric"
-                      value={modelFormData.targetMetric}
-                      onChange={handleModelFormChange}
-                      placeholder="Select metric"
-                    >
-                      <option value="auc">AUC-ROC</option>
-                      <option value="f1">F1 Score</option>
-                      <option value="precision">Precision</option>
-                      <option value="recall">Recall</option>
-                      <option value="rmse">RMSE</option>
-                      <option value="mae">MAE</option>
-                      <option value="silhouette">Silhouette Score</option>
-                    </Select>
-                  </FormControl>
-                  <FormControl isRequired>
-                    <FormLabel>Target Threshold</FormLabel>
-                    <Input
-                      name="targetThreshold"
-                      value={modelFormData.targetThreshold}
-                      onChange={handleModelFormChange}
-                      placeholder="e.g., 0.85"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="1"
+        
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} mb={8}>
+          <StatCard 
+            label="Total Impressions" 
+            value="1.2M" 
+            change={12.5} 
+            icon={FiTrendingUp} 
+            color="blue" 
+          />
+          <StatCard 
+            label="Click-Through Rate" 
+            value="3.2%" 
+            change={0.8} 
+            icon={FiTrendingUp} 
+            color="green" 
+          />
+          <StatCard 
+            label="Conversion Rate" 
+            value="2.4%" 
+            change={-0.5} 
+            icon={FiTrendingDown} 
+            color="orange" 
+          />
+          <StatCard 
+            label="ROI" 
+            value="285%" 
+            change={22} 
+            icon={FiTrendingUp} 
+            color="purple" 
+          />
+        </SimpleGrid>
+        
+        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8} mb={8}>
+          <MarketingAnalyticsEmbed />
+          
+          <Card>
+            <CardBody>
+              <Flex direction="column" h="100%">
+                <Flex justify="space-between" align="center" mb={4}>
+                  <Heading size="md">Recent Campaigns</Heading>
+                  <Menu>
+                    <MenuButton
+                      as={IconButton}
+                      size="sm"
+                      variant="ghost"
+                      icon={<FiMoreVertical />}
+                      aria-label="Campaign options"
                     />
-                  </FormControl>
-                </Grid>
-                <FormControl>
-                  <FormLabel>Version</FormLabel>
-                  <Input
-                    name="version"
-                    value={modelFormData.version}
-                    onChange={handleModelFormChange}
-                    placeholder="e.g., 1.0.0"
+                    <MenuList>
+                      <MenuItem>View all campaigns</MenuItem>
+                      <MenuItem>Filter campaigns</MenuItem>
+                      <MenuItem>Sort by performance</MenuItem>
+                    </MenuList>
+                  </Menu>
+                </Flex>
+                
+                <TableContainer overflowY="auto" maxH="350px">
+                  <Table variant="simple" size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>Campaign</Th>
+                        <Th>Status</Th>
+                        <Th isNumeric>Budget</Th>
+                        <Th isNumeric>ROI</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      <Tr>
+                        <Td>Summer Sale 2023</Td>
+                        <Td><Badge colorScheme="green">Active</Badge></Td>
+                        <Td isNumeric>$12,500</Td>
+                        <Td isNumeric>342%</Td>
+                      </Tr>
+                      <Tr>
+                        <Td>Product Launch</Td>
+                        <Td><Badge colorScheme="green">Active</Badge></Td>
+                        <Td isNumeric>$8,000</Td>
+                        <Td isNumeric>185%</Td>
+                      </Tr>
+                      <Tr>
+                        <Td>Email Remarketing</Td>
+                        <Td><Badge colorScheme="orange">Paused</Badge></Td>
+                        <Td isNumeric>$3,200</Td>
+                        <Td isNumeric>210%</Td>
+                      </Tr>
+                      <Tr>
+                        <Td>Holiday Promotion</Td>
+                        <Td><Badge colorScheme="purple">Scheduled</Badge></Td>
+                        <Td isNumeric>$15,000</Td>
+                        <Td isNumeric>--</Td>
+                      </Tr>
+                      <Tr>
+                        <Td>Social Media Ads</Td>
+                        <Td><Badge colorScheme="green">Active</Badge></Td>
+                        <Td isNumeric>$5,750</Td>
+                        <Td isNumeric>156%</Td>
+                      </Tr>
+                      <Tr>
+                        <Td>Spring Collection</Td>
+                        <Td><Badge colorScheme="red">Ended</Badge></Td>
+                        <Td isNumeric>$9,200</Td>
+                        <Td isNumeric>278%</Td>
+                      </Tr>
+                    </Tbody>
+                  </Table>
+                </TableContainer>
+              </Flex>
+            </CardBody>
+          </Card>
+        </SimpleGrid>
+        
+        <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
+          <Card>
+            <CardBody>
+              <Flex direction="column" h="100%">
+                <Flex justify="space-between" align="center" mb={4}>
+                  <Heading size="md">Audience Segments</Heading>
+                  <IconButton
+                    icon={<FiPlus />}
+                    aria-label="Add segment"
+                    size="sm"
+                    onClick={onNewSegmentOpen}
                   />
-                </FormControl>
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onNewModelClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="blue" type="submit">
-                Create Model
-              </Button>
-            </ModalFooter>
-          </form>
-        </ModalContent>
-      </Modal>
-
-      {/* New Assessment Modal */}
-      <Modal isOpen={isNewAssessmentOpen} onClose={onNewAssessmentClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <form onSubmit={handleNewAssessment}>
-            <ModalHeader>Create New Assessment</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Assessment Name</FormLabel>
-                  <Input
-                    name="name"
-                    value={assessmentFormData.name}
-                    onChange={handleAssessmentFormChange}
-                    placeholder="e.g., Q2 2025 Risk Assessment"
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Model</FormLabel>
-                  <Select
-                    name="model"
-                    value={assessmentFormData.model}
-                    onChange={handleAssessmentFormChange}
-                    placeholder="Select model"
-                  >
-                    <option value="credit_risk">Credit Risk Classifier</option>
-                    <option value="churn">Customer Churn Predictor</option>
-                    <option value="fraud">Fraud Detection</option>
-                    <option value="price">Price Forecaster</option>
-                    <option value="segment">Market Segmentation</option>
-                  </Select>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Assessment Type</FormLabel>
-                  <Select
-                    name="type"
-                    value={assessmentFormData.type}
-                    onChange={handleAssessmentFormChange}
-                    placeholder="Select assessment type"
-                  >
-                    <option value="performance">Performance Evaluation</option>
-                    <option value="bias">Bias Assessment</option>
-                    <option value="drift">Model Drift Analysis</option>
-                    <option value="fairness">Fairness Assessment</option>
-                    <option value="robustness">Robustness Testing</option>
-                    <option value="compliance">Compliance Review</option>
-                  </Select>
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Metrics to Monitor</FormLabel>
-                  <Box maxH="200px" overflowY="auto" p={2} borderWidth={1} borderRadius="md">
-                    <CheckboxGroup
-                      colorScheme="green"
-                      value={assessmentFormData.metrics}
-                      onChange={handleMetricsChange}
-                    >
-                      <VStack align="stretch" spacing={4}>
-                        {Object.entries(GROUPED_METRICS).map(([category, metrics]) => (
-                          <Box key={category}>
-                            <Text fontWeight="medium" mb={2} color="gray.600">
-                              {category}
-                            </Text>
-                            <SimpleGrid columns={2} spacing={2}>
-                              {metrics.map((metric) => (
-                                <Checkbox key={metric.id} value={metric.id}>
-                                  {metric.label}
-                                </Checkbox>
-                              ))}
-                            </SimpleGrid>
-                          </Box>
-                        ))}
-                      </VStack>
-                    </CheckboxGroup>
+                </Flex>
+                
+                <Stack divider={<StackDivider />} spacing={4}>
+                  <Box>
+                    <Flex justify="space-between" align="flex-start">
+                      <Box>
+                        <Heading size="sm">New Customers</Heading>
+                        <Text fontSize="sm" color="gray.500">First purchase in last 30 days</Text>
+                      </Box>
+                      <Badge colorScheme="green">16,482</Badge>
+                    </Flex>
+                    <Progress value={65} colorScheme="green" size="sm" mt={2} />
                   </Box>
-                </FormControl>
-                <Grid templateColumns="repeat(2, 1fr)" gap={4} width="100%">
-                  <FormControl>
-                    <FormLabel>Alert Threshold</FormLabel>
-                    <Input
-                      name="threshold"
-                      value={assessmentFormData.threshold}
-                      onChange={handleAssessmentFormChange}
-                      placeholder="e.g., 0.1"
-                      type="number"
-                      step="0.01"
-                    />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Assessment Frequency</FormLabel>
-                    <Select
-                      name="frequency"
-                      value={assessmentFormData.frequency}
-                      onChange={handleAssessmentFormChange}
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="quarterly">Quarterly</option>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <FormControl>
-                  <FormLabel>Notes</FormLabel>
-                  <Textarea
-                    name="notes"
-                    value={assessmentFormData.notes}
-                    onChange={handleAssessmentFormChange}
-                    placeholder="Enter assessment notes and requirements"
+                  
+                  <Box>
+                    <Flex justify="space-between" align="flex-start">
+                      <Box>
+                        <Heading size="sm">Loyal Customers</Heading>
+                        <Text fontSize="sm" color="gray.500">5+ purchases lifetime</Text>
+                      </Box>
+                      <Badge colorScheme="purple">32,951</Badge>
+                    </Flex>
+                    <Progress value={85} colorScheme="purple" size="sm" mt={2} />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" align="flex-start">
+                      <Box>
+                        <Heading size="sm">Cart Abandoners</Heading>
+                        <Text fontSize="sm" color="gray.500">Last 7 days</Text>
+                      </Box>
+                      <Badge colorScheme="orange">8,741</Badge>
+                    </Flex>
+                    <Progress value={40} colorScheme="orange" size="sm" mt={2} />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" align="flex-start">
+                      <Box>
+                        <Heading size="sm">High-Value Prospects</Heading>
+                        <Text fontSize="sm" color="gray.500">Viewed premium products</Text>
+                      </Box>
+                      <Badge colorScheme="blue">12,385</Badge>
+                    </Flex>
+                    <Progress value={55} colorScheme="blue" size="sm" mt={2} />
+                  </Box>
+                </Stack>
+              </Flex>
+            </CardBody>
+          </Card>
+          
+          <Card>
+            <CardBody>
+              <Flex direction="column" h="100%">
+                <Heading size="md" mb={4}>Channel Performance</Heading>
+                
+                <Stack divider={<StackDivider />} spacing={4}>
+                  <Box>
+                    <Flex justify="space-between" align="center">
+                      <Text fontWeight="medium">Social Media</Text>
+                      <Text fontWeight="bold">42%</Text>
+                    </Flex>
+                    <Progress value={42} colorScheme="facebook" size="sm" mt={2} />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" align="center">
+                      <Text fontWeight="medium">Email Marketing</Text>
+                      <Text fontWeight="bold">28%</Text>
+                    </Flex>
+                    <Progress value={28} colorScheme="green" size="sm" mt={2} />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" align="center">
+                      <Text fontWeight="medium">Paid Search</Text>
+                      <Text fontWeight="bold">15%</Text>
+                    </Flex>
+                    <Progress value={15} colorScheme="yellow" size="sm" mt={2} />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" align="center">
+                      <Text fontWeight="medium">Organic Search</Text>
+                      <Text fontWeight="bold">10%</Text>
+                    </Flex>
+                    <Progress value={10} colorScheme="purple" size="sm" mt={2} />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" align="center">
+                      <Text fontWeight="medium">Direct Traffic</Text>
+                      <Text fontWeight="bold">5%</Text>
+                    </Flex>
+                    <Progress value={5} colorScheme="blue" size="sm" mt={2} />
+                  </Box>
+                </Stack>
+              </Flex>
+            </CardBody>
+          </Card>
+          
+          <Card>
+            <CardBody>
+              <Flex direction="column" h="100%">
+                <Heading size="md" mb={4}>Conversion Funnel</Heading>
+                
+                <Stack spacing={6} mt={4}>
+                  <Box>
+                    <Flex justify="space-between" mb={1}>
+                      <Text fontWeight="medium">Impressions</Text>
+                      <Text>1,250,000</Text>
+                    </Flex>
+                    <Progress value={100} size="lg" colorScheme="blue" />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" mb={1}>
+                      <Text fontWeight="medium">Clicks</Text>
+                      <Text>125,000 (10%)</Text>
+                    </Flex>
+                    <Progress value={40} size="lg" colorScheme="green" />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" mb={1}>
+                      <Text fontWeight="medium">Add to Cart</Text>
+                      <Text>18,750 (15%)</Text>
+                    </Flex>
+                    <Progress value={15} size="lg" colorScheme="yellow" />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" mb={1}>
+                      <Text fontWeight="medium">Checkout Started</Text>
+                      <Text>9,375 (50%)</Text>
+                    </Flex>
+                    <Progress value={7.5} size="lg" colorScheme="orange" />
+                  </Box>
+                  
+                  <Box>
+                    <Flex justify="space-between" mb={1}>
+                      <Text fontWeight="medium">Purchases</Text>
+                      <Text>6,250 (66.7%)</Text>
+                    </Flex>
+                    <Progress value={5} size="lg" colorScheme="red" />
+                  </Box>
+                </Stack>
+              </Flex>
+            </CardBody>
+          </Card>
+        </SimpleGrid>
+        
+        {/* New Campaign Modal */}
+        <Modal isOpen={isNewCampaignOpen} onClose={onNewCampaignClose} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Create New Marketing Campaign</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4} as="form" onSubmit={handleNewCampaign}>
+                <FormControl isRequired>
+                  <FormLabel>Campaign Name</FormLabel>
+                  <Input 
+                    name="name"
+                    value={campaignForm.name}
+                    onChange={handleCampaignFormChange}
+                    placeholder="Fall Promotion 2023"
                   />
                 </FormControl>
+                
+                <FormControl isRequired>
+                  <FormLabel>Campaign Type</FormLabel>
+                  <Select 
+                    name="type"
+                    value={campaignForm.type}
+                    onChange={handleCampaignFormChange}
+                  >
+                    <option value="email">Email Campaign</option>
+                    <option value="social">Social Media</option>
+                    <option value="display">Display Ads</option>
+                    <option value="ppc">PPC/Search Ads</option>
+                    <option value="content">Content Marketing</option>
+                  </Select>
+                </FormControl>
+                
+                <FormControl isRequired>
+                  <FormLabel>Budget ($)</FormLabel>
+                  <Input 
+                    name="budget"
+                    value={campaignForm.budget}
+                    onChange={handleCampaignFormChange}
+                    placeholder="5000"
+                    type="number"
+                  />
+                </FormControl>
+                
+                <SimpleGrid columns={2} spacing={4} width="100%">
+                  <FormControl isRequired>
+                    <FormLabel>Start Date</FormLabel>
+                    <Input 
+                      name="startDate"
+                      value={campaignForm.startDate}
+                      onChange={handleCampaignFormChange}
+                      type="date"
+                    />
+                  </FormControl>
+                  
+                  <FormControl isRequired>
+                    <FormLabel>End Date</FormLabel>
+                    <Input 
+                      name="endDate"
+                      value={campaignForm.endDate}
+                      onChange={handleCampaignFormChange}
+                      type="date"
+                    />
+                  </FormControl>
+                </SimpleGrid>
+                
                 <FormControl>
-                  <FormLabel>Assessment Owner</FormLabel>
-                  <Input
-                    name="owner"
-                    value={assessmentFormData.owner}
-                    onChange={handleAssessmentFormChange}
-                    placeholder="Enter the name of the responsible person"
+                  <FormLabel>Campaign Goals</FormLabel>
+                  <Textarea 
+                    name="goal"
+                    value={campaignForm.goal}
+                    onChange={handleCampaignFormChange}
+                    placeholder="Describe the main objectives of this campaign..."
+                  />
+                </FormControl>
+                
+                <FormControl>
+                  <FormLabel>Target Metrics</FormLabel>
+                  <CheckboxGroup colorScheme="blue" defaultValue={['impressions', 'ctr', 'conversionRate', 'roi']}>
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={2}>
+                      {METRICS_OPTIONS.map((metric: { id: string, label: string, category: string }) => (
+                        <Checkbox key={metric.id} value={metric.id}>
+                          {metric.label}
+                        </Checkbox>
+                      ))}
+                    </SimpleGrid>
+                  </CheckboxGroup>
+                </FormControl>
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={onNewCampaignClose}>
+                Cancel
+              </Button>
+              <Button colorScheme="blue" onClick={handleNewCampaign}>
+                Create Campaign
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+        
+        {/* New Segment Modal */}
+        <Modal isOpen={isNewSegmentOpen} onClose={onNewSegmentClose}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Create Audience Segment</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4} as="form" onSubmit={handleNewSegment}>
+                <FormControl isRequired>
+                  <FormLabel>Segment Name</FormLabel>
+                  <Input 
+                    name="name"
+                    value={segmentForm.name}
+                    onChange={handleSegmentFormChange}
+                    placeholder="High-Value Customers"
+                  />
+                </FormControl>
+                
+                <FormControl isRequired>
+                  <FormLabel>Segment Criteria</FormLabel>
+                  <Select 
+                    name="criteria"
+                    value={segmentForm.criteria}
+                    onChange={handleSegmentFormChange}
+                  >
+                    <option value="">Select criteria...</option>
+                    <option value="purchase_frequency">Purchase Frequency</option>
+                    <option value="recency">Purchase Recency</option>
+                    <option value="value">Customer Value</option>
+                    <option value="engagement">Engagement Level</option>
+                    <option value="cart_abandonment">Cart Abandonment</option>
+                    <option value="custom">Custom Rule</option>
+                  </Select>
+                </FormControl>
+                
+                <FormControl>
+                  <FormLabel>Description</FormLabel>
+                  <Textarea 
+                    name="description"
+                    value={segmentForm.description}
+                    onChange={handleSegmentFormChange}
+                    placeholder="Describe this audience segment..."
                   />
                 </FormControl>
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onNewAssessmentClose}>
+              <Button variant="ghost" mr={3} onClick={onNewSegmentClose}>
                 Cancel
               </Button>
-              <Button colorScheme="green" type="submit">
-                Create Assessment
+              <Button colorScheme="blue" onClick={handleNewSegment}>
+                Create Segment
               </Button>
             </ModalFooter>
-          </form>
-        </ModalContent>
-      </Modal>
-
-      {/* Dataset Upload Modal */}
-      <Modal isOpen={isUploadDatasetOpen} onClose={onUploadDatasetClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <form onSubmit={handleDatasetUpload}>
-            <ModalHeader>Upload Dataset</ModalHeader>
+          </ModalContent>
+        </Modal>
+        
+        {/* Data Upload Modal */}
+        <Modal isOpen={isUploadOpen} onClose={onUploadClose}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Import Marketing Data</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Dataset Name</FormLabel>
-                  <Input placeholder="e.g., Customer Transactions 2025" />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Dataset Type</FormLabel>
-                  <Select placeholder="Select dataset type">
-                    <option value="tabular">Tabular Data (CSV, Excel)</option>
-                    <option value="text">Text Data</option>
-                    <option value="image">Image Data</option>
-                    <option value="time_series">Time Series Data</option>
-                    <option value="structured">Structured Data (JSON)</option>
-                    <option value="graph">Graph Data</option>
+                <FormControl>
+                  <FormLabel>Data Source</FormLabel>
+                  <Select defaultValue="file">
+                    <option value="file">File Upload</option>
+                    <option value="google">Google Analytics</option>
+                    <option value="facebook">Facebook Ads</option>
+                    <option value="mailchimp">Mailchimp</option>
+                    <option value="api">Custom API</option>
                   </Select>
                 </FormControl>
+                
                 <FormControl>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea placeholder="Enter dataset description, schema, and any relevant notes" />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Tags</FormLabel>
-                  <Input placeholder="Enter comma-separated tags (e.g., finance, customer, transactions)" />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>File</FormLabel>
-                  <Input type="file" accept=".csv,.xlsx,.json,.txt,.parquet,.arrow" />
-                </FormControl>
-                <FormControl>
-                  <FormLabel mb="0">
-                    <HStack spacing={2}>
-                      <Text>Auto-process after upload</Text>
-                      <Switch defaultChecked />
-                    </HStack>
-                  </FormLabel>
+                  <FormLabel>Select File</FormLabel>
+                  <Input type="file" pt={1} />
                   <Text fontSize="sm" color="gray.500" mt={1}>
-                    Automatically validate, clean, and prepare the dataset for model training
+                    Supported formats: CSV, Excel, JSON
                   </Text>
                 </FormControl>
+                
                 <FormControl>
-                  <FormLabel mb="0">
-                    <HStack spacing={2}>
-                      <Text>Schedule periodic refresh</Text>
-                      <Switch />
-                    </HStack>
-                  </FormLabel>
+                  <FormLabel>Data Type</FormLabel>
+                  <Select defaultValue="campaign">
+                    <option value="campaign">Campaign Data</option>
+                    <option value="customer">Customer Data</option>
+                    <option value="product">Product Performance</option>
+                    <option value="transaction">Transaction History</option>
+                  </Select>
                 </FormControl>
-                {isUploading && (
-                  <Box w="100%">
-                    <Progress
-                      value={uploadProgress}
-                      size="sm"
-                      colorScheme="blue"
-                      hasStripe
-                      isAnimated
-                    />
-                    <Text mt={2} fontSize="sm" color="gray.600">
-                      Uploading... {uploadProgress}%
-                    </Text>
-                  </Box>
-                )}
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onUploadDatasetClose}>
+              <Button variant="ghost" mr={3} onClick={onUploadClose}>
                 Cancel
               </Button>
-              <Button
-                colorScheme="blue"
-                type="submit"
-                isLoading={isUploading}
-                loadingText="Uploading..."
-              >
-                Upload Dataset
+              <Button colorScheme="blue" onClick={handleDatasetUpload}>
+                Upload Data
               </Button>
             </ModalFooter>
-          </form>
-        </ModalContent>
-      </Modal>
-
-      {/* Export Modal */}
-      <Modal isOpen={isExportOpen} onClose={onExportClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Export Data</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4}>
-              <Button
-                w="100%"
-                leftIcon={<FiDownload />}
-                onClick={() => handleExport('csv')}
-              >
-                Export as CSV
-              </Button>
-              <Button
-                w="100%"
-                leftIcon={<FiDownload />}
-                onClick={() => handleExport('excel')}
-              >
-                Export as Excel
-              </Button>
-              <Button
-                w="100%"
-                leftIcon={<FiDownload />}
-                onClick={() => handleExport('json')}
-              >
-                Export as JSON
-              </Button>
-              <Button
-                w="100%"
-                leftIcon={<FiDownload />}
-                onClick={() => handleExport('pdf')}
-              >
-                Export as PDF Report
-              </Button>
-            </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-
-      {/* Stats Section */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} mb={8}>
-        <StatCard
-          label="Active Projects"
-          value="12"
-          change={8}
-          icon={FiTrendingUp}
-          color="primary"
-        />
-        <StatCard
-          label="Risk Assessments"
-          value="8"
-          change={-3}
-          icon={FiAlertCircle}
-          color="accent"
-        />
-        <StatCard
-          label="Models in Production"
-          value="5"
-          change={2}
-          icon={FiCheckCircle}
-          color="green"
-        />
-        <StatCard
-          label="Pending Reviews"
-          value="7"
-          change={0}
-          icon={FiClock}
-          color="orange"
-        />
-      </SimpleGrid>
-      
-      {/* Main Content */}
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} mb={8}>
-        {/* Recent Activity */}
-        <Card variant="activity" height="100%">
-          <CardBody>
-            <Heading size="md" mb={6}>Recent Activity</Heading>
-            <Stack divider={<StackDivider />} spacing={6}>
-              {[
-                { 
-                  name: 'Credit Risk Model Updated', 
-                  type: 'model', 
-                  date: '2 hours ago',
-                  status: 'success'
-                },
-                { 
-                  name: 'New Risk Assessment', 
-                  type: 'assessment', 
-                  date: '5 hours ago',
-                  status: 'warning'
-                },
-                { 
-                  name: 'Marketing Campaign Analysis', 
-                  type: 'analytics', 
-                  date: '1 day ago',
-                  status: 'info'
-                },
-                { 
-                  name: 'Customer Churn Predictor', 
-                  type: 'model', 
-                  date: '2 days ago',
-                  status: 'success'
-                },
-              ].map((activity, idx) => (
-                <HStack key={idx} spacing={4} align="center">
-                  <Badge
-                    px={3}
-                    py={1}
-                    borderRadius="full"
-                    colorScheme={
-                      activity.status === 'success' ? 'green' : 
-                      activity.status === 'warning' ? 'orange' : 'blue'
-                    }
-                  >
-                    {activity.type}
-                  </Badge>
-                  <Box flex="1">
-                    <Text fontWeight="medium" mb={1}>{activity.name}</Text>
-                    <Text fontSize="sm" color="gray.500">{activity.date}</Text>
-                  </Box>
-                </HStack>
-              ))}
-            </Stack>
-          </CardBody>
-        </Card>
-        
-        {/* BI Embed */}
-        <Card height="100%">
-          <CardBody>
-            <BIEmbed />
-          </CardBody>
-        </Card>
-      </SimpleGrid>
-      
-      {/* Models Table */}
-      <Card mb={8}>
-        <CardBody>
-          <Heading size="md" mb={4}>Model Overview</Heading>
-          <TableContainer>
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th>Model Name</Th>
-                  <Th>Type</Th>
-                  <Th>Status</Th>
-                  <Th>Performance</Th>
-                  <Th>Last Updated</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                <Tr>
-                  <Td>Credit Risk Classifier</Td>
-                  <Td>Classification</Td>
-                  <Td><Badge colorScheme="green">Production</Badge></Td>
-                  <Td>AUC: 0.82</Td>
-                  <Td>2023-11-02</Td>
-                </Tr>
-                <Tr>
-                  <Td>Customer Churn Predictor</Td>
-                  <Td>Classification</Td>
-                  <Td><Badge colorScheme="green">Production</Badge></Td>
-                  <Td>F1: 0.76</Td>
-                  <Td>2023-10-28</Td>
-                </Tr>
-                <Tr>
-                  <Td>Price Forecaster</Td>
-                  <Td>Regression</Td>
-                  <Td><Badge colorScheme="yellow">Validation</Badge></Td>
-                  <Td>RMSE: 0.31</Td>
-                  <Td>2023-11-01</Td>
-                </Tr>
-                <Tr>
-                  <Td>Fraud Detection</Td>
-                  <Td>Classification</Td>
-                  <Td><Badge colorScheme="green">Production</Badge></Td>
-                  <Td>Precision: 0.91</Td>
-                  <Td>2023-10-15</Td>
-                </Tr>
-                <Tr>
-                  <Td>Market Segmentation</Td>
-                  <Td>Clustering</Td>
-                  <Td><Badge colorScheme="red">Development</Badge></Td>
-                  <Td>Silhouette: 0.68</Td>
-                  <Td>2023-11-03</Td>
-                </Tr>
-              </Tbody>
-            </Table>
-          </TableContainer>
-        </CardBody>
-      </Card>
+          </ModalContent>
+        </Modal>
+      </Box>
     </DashboardLayout>
   );
 } 

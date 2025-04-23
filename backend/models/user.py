@@ -26,6 +26,15 @@ class Permission(db.Model):
     
     def __repr__(self):
         return f'<Permission {self.name}>'
+        
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'resource': self.resource,
+            'action': self.action
+        }
 
 class Role(db.Model):
     """Role model for RBAC"""
@@ -44,6 +53,14 @@ class Role(db.Model):
     
     def __repr__(self):
         return f'<Role {self.name}>'
+        
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'is_default': self.is_default
+        }
     
     def add_permission(self, permission):
         if not self.has_permission(permission):
@@ -124,4 +141,17 @@ class User(db.Model):
     
     def get_role_names(self):
         return [role.name for role in self.roles]
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'roles': self.get_role_names()
+        }
  

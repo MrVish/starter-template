@@ -1,0 +1,3 @@
+@echo off
+echo Running Flask CLI Application...
+flask --app cli_app run --debug 

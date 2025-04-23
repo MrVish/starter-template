@@ -18,6 +18,11 @@ class Config:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    # Add flexibility for NextAuth compatibility
+    JWT_ALGORITHM = 'HS256'
+    JWT_IDENTITY_CLAIM = 'sub'
+    JWT_VERIFY_CLAIMS = ['signature', 'exp', 'iat', 'nbf']
+    JWT_ERROR_MESSAGE_KEY = 'error'
     
     # OAuth Configuration
     OAUTH_CREDENTIALS = {
@@ -84,4 +89,22 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     JWT_SECRET_KEY = 'test-key'
     CELERY_BROKER_URL = 'memory://'
-    CELERY_RESULT_BACKEND = 'memory://' 
+    CELERY_RESULT_BACKEND = 'memory://'
+
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    
+
+class ProductionConfig(Config):
+    DEBUG = False
+    # Override with production-specific settings
+    
+
+# Configuration dictionary used by app.py
+app_config = {
+    'development': DevelopmentConfig,
+    'testing': TestConfig,
+    'production': ProductionConfig,
+    'default': DevelopmentConfig
+} 

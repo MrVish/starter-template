@@ -54,6 +54,10 @@ export default function SignInPage() {
     });
   };
 
+  const handleOAuthSignIn = (providerId) => {
+    signIn(providerId, { callbackUrl: '/dashboard' });
+  };
+
   if (!providers) {
     return (
       <Box bg={bg} minH="100vh" display="flex" alignItems="center" justifyContent="center">
@@ -249,46 +253,32 @@ export default function SignInPage() {
               {/* OAuth Providers */}
               {(providers.google || providers['azure-ad']) && (
                 <>
-                  <HStack w="100%" my={2}>
-                    <Divider borderColor={borderColor} />
-                    <Text fontSize="sm" color="gray.500" px={4} fontWeight="medium">OR</Text>
-                    <Divider borderColor={borderColor} />
-                  </HStack>
-                  
-                  <VStack width="100%" spacing={4}>
+                  <Divider my={6} borderColor={borderColor} />
+                  <VStack spacing={4} width="100%">
                     {providers.google && (
                       <Button
+                        leftIcon={<Icon as={FaGoogle} />}
+                        onClick={() => handleOAuthSignIn('google')}
                         width="100%"
-                        leftIcon={<FaGoogle />}
-                        onClick={() => signIn('google', { callbackUrl: '/' })}
-                        colorScheme="red"
                         variant="outline"
                         size="lg"
-                        py={7}
-                        borderRadius="xl"
-                        fontSize="md"
-                        fontWeight="medium"
-                        _hover={{ transform: 'translateY(-3px)', boxShadow: 'md', bg: 'red.50' }}
-                        transition="all 0.3s ease"
+                        borderColor={borderColor}
+                        _hover={{ bg: 'gray.50' }}
+                        borderRadius="lg"
                       >
                         Sign in with Google
                       </Button>
                     )}
-                    
                     {providers['azure-ad'] && (
                       <Button
+                        leftIcon={<Icon as={FaMicrosoft} />}
+                        onClick={() => handleOAuthSignIn('azure-ad')}
                         width="100%"
-                        leftIcon={<FaMicrosoft />}
-                        onClick={() => signIn('azure-ad', { callbackUrl: '/' })}
-                        colorScheme="blue"
                         variant="outline"
                         size="lg"
-                        py={7}
-                        borderRadius="xl"
-                        fontSize="md"
-                        fontWeight="medium"
-                        _hover={{ transform: 'translateY(-3px)', boxShadow: 'md', bg: 'blue.50' }}
-                        transition="all 0.3s ease"
+                        borderColor={borderColor}
+                        _hover={{ bg: 'gray.50' }}
+                        borderRadius="lg"
                       >
                         Sign in with Microsoft
                       </Button>

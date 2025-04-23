@@ -1,3 +1,8 @@
+"""
+[DEPRECATED - CANDIDATE FOR REMOVAL]
+This file contains the ML model database schema that may no longer be needed.
+If you're not using model risk management features, this file can be safely removed.
+"""
 from datetime import datetime
 from extensions import db
 

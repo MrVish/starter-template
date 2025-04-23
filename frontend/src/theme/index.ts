@@ -110,7 +110,19 @@ const colors = {
   gradients: {
     bluePurple: 'linear(to-br, blue.700, gray.900)',
     blueGold: 'linear(to-br, blue.600, accent.500)',
-  }
+  },
+  brand: {
+    50: '#fdeee9',
+    100: '#fbc2b9',
+    200: '#f79a8b',
+    300: '#f3735e',
+    400: '#ef4a31',
+    500: '#FB4E0B', // Company brand orange
+    600: '#D7470A',
+    700: '#B04008',
+    800: '#8A3907',
+    900: '#623007',
+  },
 };
 
 const fonts = {
@@ -192,10 +204,10 @@ const components = {
     },
     variants: {
       primary: {
-        bg: 'primary.500',
+        bg: 'brand.500',
         color: 'white',
         _hover: {
-          bg: 'primary.600',
+          bg: 'brand.600',
           transform: 'translateY(-3px)',
           boxShadow: 'lg',
         },

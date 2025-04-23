@@ -3,6 +3,45 @@ import GoogleProvider from 'next-auth/providers/google';
 import AzureADProvider from 'next-auth/providers/azure-ad';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import axios from 'axios';
+import crypto from 'crypto';
+import { JWT } from 'next-auth/jwt';
+
+// Extend the default session type to include our custom properties
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+    token?: string;
+    user: {
+      id?: string;
+      name?: string;
+      email?: string;
+      image?: string;
+    }
+  }
+  
+  interface User {
+    id: string;
+    name: string;
+    email: string;
+    accessToken?: string;
+    refreshToken?: string;
+  }
+}
+
+// Extend JWT type to include our custom properties
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    sub?: string;
+    type?: string;
+    jti?: string;
+    iat?: number;
+    nbf?: number;
+    exp?: number;
+  }
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -62,6 +101,14 @@ const handler = NextAuth({
         token.id = user.id;
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
+        token.sub = user.id;
+        token.type = 'access';
+        token.jti = crypto.randomUUID();
+        
+        const now = Math.floor(Date.now() / 1000);
+        token.iat = now;
+        token.nbf = now;
+        token.exp = now + 3600;
       }
       return token;
     },
@@ -69,9 +116,18 @@ const handler = NextAuth({
       if (session.user) {
         session.user.id = token.id;
         session.accessToken = token.accessToken;
+        session.token = token.accessToken;
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to dashboard after sign in
+      if (url.startsWith(baseUrl)) {
+        return `${baseUrl}/dashboard`;
+      }
+      // For other URLs, we'll keep them as is
+      return url;
+    }
   },
   session: {
     strategy: 'jwt',

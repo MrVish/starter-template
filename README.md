@@ -55,7 +55,7 @@ python utils/create_admin.py
 
 5. Run the backend server:
 ```bash
-flask run
+python app.py
 ```
 
 ### Frontend Setup
@@ -122,7 +122,7 @@ docker-compose exec backend python utils/create_admin.py
 ```bash
 # Terminal 1 - Backend
 cd backend
-flask run
+python app.py
 
 # Terminal 2 - Frontend
 cd frontend

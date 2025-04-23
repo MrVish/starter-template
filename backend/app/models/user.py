@@ -11,6 +11,15 @@ class Permission(db.Model):
     resource = db.Column(db.String(80))  # e.g., 'user', 'model', 'dashboard'
     action = db.Column(db.String(80))    # e.g., 'create', 'read', 'update', 'delete'
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'resource': self.resource,
+            'action': self.action
+        }
+
 class Role(db.Model):
     __tablename__ = 'roles'
     
