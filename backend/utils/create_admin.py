@@ -4,13 +4,12 @@ import os
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import create_app
+# Use the CLI app instead of the regular app
+from cli_app import app
 from models.user import User, Role
 from extensions import db
 
 def create_admin_user():
-    app = create_app()
-    
     with app.app_context():
         # Check if admin user already exists
         admin = User.query.filter_by(username='admin').first()

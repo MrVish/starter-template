@@ -4,7 +4,8 @@ import os
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import create_app
+# Use the CLI app instead of the regular app
+from cli_app import app
 from models.user import Role, Permission
 from extensions import db
 
@@ -12,8 +13,6 @@ def init_roles_and_permissions():
     """
     Initialize default roles and permissions in the database for a Marketing Analytics application
     """
-    app = create_app()
-    
     with app.app_context():
         # Create database tables if they don't exist
         db.create_all()
