@@ -9,6 +9,18 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Display a prominent warning message
+logger.warning("""
+*******************************************************************************
+* WARNING: This app.py is not the recommended entry point for the application.
+* Please use the following command to run the server with proper API routing:
+*
+* flask --app cli_app run --debug
+*
+* Using 'flask run' directly with this app.py may result in incorrect routing.
+*******************************************************************************
+""")
+
 def create_app(config_name=None):
     """Application Factory Pattern"""
     if config_name is None:

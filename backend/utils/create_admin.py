@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cli_app import app
 from models.user import User, Role
 from extensions import db
+from werkzeug.security import generate_password_hash
 
 def create_admin_user():
     with app.app_context():
@@ -23,9 +24,9 @@ def create_admin_user():
             email='admin@example.com',
             first_name='Admin',
             last_name='User',
+            password_hash=generate_password_hash('admin123')
         )
-        admin.set_password('admin123')  # Hash the password
-
+        
         # Get or create admin role
         admin_role = Role.query.filter_by(name='admin').first()
         if not admin_role:

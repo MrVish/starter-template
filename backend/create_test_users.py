@@ -1,128 +1,116 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
-Script to create test users in PostgreSQL database.
+Script to create test users for development.
 """
 import os
 import sys
+import json
+import random
 from datetime import datetime
 from werkzeug.security import generate_password_hash
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from app import create_app
+
+# Add the parent directory to the path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from cli_app import app
+from models.user import User, Role
 from extensions import db
 
-# Database connection string
-DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@db:5432/mlmonitor')
-
-def create_test_users():
-    """Create test users in the database"""
-    app = create_app()
-    
+def create_test_users(num_users=20, output_file=None):
+    """Create test users for development"""
     with app.app_context():
-        try:
-            # Create admin role if it doesn't exist
-            admin_role = db.session.execute(db.text("""
-                INSERT INTO roles (name, description, is_default)
-                VALUES ('admin', 'Administrator role', false)
-                ON CONFLICT (name) DO NOTHING
-                RETURNING id;
-            """)).fetchone()
-
-            if not admin_role:
-                admin_role = db.session.execute(db.text(
-                    "SELECT id FROM roles WHERE name = 'admin'"
-                )).fetchone()
-
-            if not admin_role:
-                print("Error: Could not find or create admin role")
-                return
-
-            # Create test users
-            test_users = [
-                {
-                    'username': 'admin',
-                    'email': 'admin@example.com',
-                    'password': 'admin123',
-                    'first_name': 'Admin',
-                    'last_name': 'User',
-                    'is_active': True
-                },
-                {
-                    'username': 'user1',
-                    'email': 'user1@example.com',
-                    'password': 'user123',
-                    'first_name': 'Test',
-                    'last_name': 'User 1',
-                    'is_active': True
-                },
-                {
-                    'username': 'user2',
-                    'email': 'user2@example.com',
-                    'password': 'user123',
-                    'first_name': 'Test',
-                    'last_name': 'User 2',
-                    'is_active': True
-                }
-            ]
-
-            for user in test_users:
-                # Check if user already exists
-                existing_user = db.session.execute(
-                    db.text("SELECT id FROM users WHERE username = :username"),
-                    {'username': user['username']}
-                ).fetchone()
-
-                if not existing_user:
-                    # Create user
-                    result = db.session.execute(db.text("""
-                        INSERT INTO users (
-                            username, email, password_hash, first_name, last_name, is_active,
-                            created_at, updated_at
-                        ) VALUES (
-                            :username, :email, :password_hash, :first_name, :last_name, :is_active,
-                            :created_at, :updated_at
-                        ) RETURNING id;
-                    """), {
-                        'username': user['username'],
-                        'email': user['email'],
-                        'password_hash': generate_password_hash(user['password']),
-                        'first_name': user['first_name'],
-                        'last_name': user['last_name'],
-                        'is_active': user['is_active'],
-                        'created_at': datetime.utcnow(),
-                        'updated_at': datetime.utcnow()
-                    })
-                    db.session.commit()
-
-                    # Get user ID
-                    user_id = result.fetchone()[0]
-
-                    # Assign admin role to admin user
-                    if user['username'] == 'admin':
-                        db.session.execute(db.text("""
-                            INSERT INTO user_roles (user_id, role_id)
-                            VALUES (:user_id, :role_id)
-                            ON CONFLICT (user_id, role_id) DO NOTHING;
-                        """), {
-                            'user_id': user_id,
-                            'role_id': admin_role[0]
-                        })
-                        db.session.commit()
-
-            print("Test users created successfully!")
-            print("\nTest credentials:")
-            print("Admin user:")
-            print("  Username: admin")
-            print("  Password: admin123")
-            print("\nRegular users:")
-            print("  Username: user1")
-            print("  Password: user123")
-            print("  Username: user2")
-            print("  Password: user123")
-
-        except Exception as e:
-            print(f"Error creating test users: {str(e)}")
-            db.session.rollback()
+        # Check if we already have many users
+        existing_count = User.query.count()
+        if existing_count > 10:
+            print(f"Database already has {existing_count} users. Skipping test user creation.")
+            return
+            
+        # Get roles
+        admin_role = Role.query.filter_by(name='admin').first()
+        analyst_role = Role.query.filter_by(name='analyst').first()
+        user_role = Role.query.filter_by(name='user').first()
+        
+        if not admin_role or not analyst_role or not user_role:
+            print("Required roles not found. Please run init_db.py first.")
+            return
+        
+        # Sample names
+        first_names = [
+            "James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", 
+            "William", "Elizabeth", "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", 
+            "Thomas", "Sarah", "Charles", "Karen", "Christopher", "Nancy", "Daniel", "Lisa", 
+            "Matthew", "Margaret", "Anthony", "Betty", "Mark", "Sandra", "Donald", "Ashley", 
+            "Steven", "Kimberly", "Paul", "Donna", "Andrew", "Emily", "Joshua", "Michelle"
+        ]
+        
+        last_names = [
+            "Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Miller", "Wilson", 
+            "Moore", "Taylor", "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", 
+            "Thompson", "Garcia", "Martinez", "Robinson", "Clark", "Rodriguez", "Lewis", "Lee", 
+            "Walker", "Hall", "Allen", "Young", "King", "Wright", "Lopez", "Hill", "Scott", 
+            "Green", "Adams", "Baker", "Gonzalez", "Nelson", "Carter", "Mitchell"
+        ]
+        
+        # Create users
+        users = []
+        for i in range(num_users):
+            first_name = random.choice(first_names)
+            last_name = random.choice(last_names)
+            username = f"{first_name.lower()}.{last_name.lower()}{random.randint(1, 999)}"
+            email = f"{username}@example.com"
+            
+            # Check if username or email already exists
+            if User.query.filter((User.username == username) | (User.email == email)).first():
+                continue
+                
+            # Create user
+            user = {
+                'username': username,
+                'email': email,
+                'password': 'Password123!',
+                'password_hash': generate_password_hash('Password123!'),
+                'first_name': first_name,
+                'last_name': last_name,
+                'is_active': True,
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            # Create in database
+            db_user = User(
+                username=user['username'],
+                email=user['email'],
+                password_hash=user['password_hash'],
+                first_name=user['first_name'],
+                last_name=user['last_name'],
+                is_active=user['is_active']
+            )
+            
+            # Assign role - most users get 'user' role, some get analyst or admin
+            role_assignment = random.random()
+            if role_assignment < 0.1:  # 10% admins
+                db_user.add_role(admin_role)
+                user['role'] = 'admin'
+            elif role_assignment < 0.3:  # 20% analysts
+                db_user.add_role(analyst_role)
+                user['role'] = 'analyst'
+            else:  # 70% regular users
+                db_user.add_role(user_role)
+                user['role'] = 'user'
+                
+            db.session.add(db_user)
+            users.append(user)
+            
+        # Commit to database
+        db.session.commit()
+        
+        # Save to file if requested
+        if output_file:
+            with open(output_file, 'w') as f:
+                json.dump(users, f, indent=2)
+                
+        print(f"Created {len(users)} test users")
+        return users
 
 if __name__ == '__main__':
-    create_test_users() 
+    create_test_users(output_file='test_users.json') 

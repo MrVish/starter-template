@@ -1,9 +1,7 @@
-from flask import Flask
-from app import create_app
+from cli_app import app
 
+# This is a simplified version of app.py for quick testing
+# Use this file to run without the full configuration
 
-app = create_app()
-with app.app_context():
-    for rule in app.url_map.iter_rules():
-        methods = ','.join(rule.methods)
-        print(f"{rule.endpoint:30s} | {methods:20s} | {rule.rule}")
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)

@@ -32,7 +32,7 @@ def train_model(model_id, dataset_path, model_type, params, features, target):
         target: Target column
     """
     from models.ml_model import MLModel
-    from app import db
+    from extensions import db
     
     try:
         # Update model status to training
@@ -171,7 +171,7 @@ def check_model_drift(model_id, new_data_path, drift_threshold=0.1):
         drift_threshold: Threshold for considering drift significant
     """
     from models.ml_model import MLModel
-    from app import db
+    from extensions import db
     
     try:
         # Get model from database

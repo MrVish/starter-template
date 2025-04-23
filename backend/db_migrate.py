@@ -1,60 +1,33 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+"""
+Script to handle database migrations.
+This is a convenience wrapper around Flask-Migrate/Alembic.
+"""
 import os
 import sys
 import argparse
-from flask_migrate import Migrate, MigrateCommand, upgrade, init, migrate, stamp
 
-# Add project root to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from app import create_app, db
+from flask_migrate import init, migrate, upgrade, revision
+from cli_app import app
+from extensions import db
 
 def run_migrations(args):
-    """Run database migrations based on command line arguments"""
-    app = create_app()
-    
+    """Run migration commands based on arguments"""
     with app.app_context():
-        # Initialize migrations if not already done
-        if not os.path.exists('migrations'):
-            print("Initializing migrations directory...")
+        if args.command == 'init':
             init()
-        
-        # Create migration
-        if args.command == 'create':
-            if not args.message:
-                print("Error: Migration message required for 'create' command")
-                sys.exit(1)
-            print(f"Creating migration: {args.message}")
+        elif args.command == 'migrate':
             migrate(message=args.message)
-        
-        # Apply migrations
         elif args.command == 'upgrade':
-            print("Applying migrations...")
-            target = args.revision if args.revision else 'head'
-            upgrade(target)
-        
-        # Set revision without migrating
-        elif args.command == 'stamp':
-            if not args.revision:
-                print("Error: Revision required for 'stamp' command")
-                sys.exit(1)
-            print(f"Stamping database with revision: {args.revision}")
-            stamp(args.revision)
-        
-        # Initialize DB with default data
-        elif args.command == 'init_data':
-            print("Initializing database with default data...")
-            from utils.init_db import init_roles_and_permissions
-            init_roles_and_permissions()
-        
-        print("Migration operation completed successfully")
+            upgrade()
+        elif args.command == 'revision':
+            revision(message=args.message)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Database migration manager')
-    parser.add_argument('command', choices=['create', 'upgrade', 'stamp', 'init_data'],
+    parser = argparse.ArgumentParser(description='Database migration utility')
+    parser.add_argument('command', choices=['init', 'migrate', 'upgrade', 'revision'],
                         help='Migration command to run')
-    parser.add_argument('--message', '-m', help='Migration message (for create command)')
-    parser.add_argument('--revision', '-r', help='Migration revision (for upgrade and stamp commands)')
+    parser.add_argument('-m', '--message', help='Migration message')
     
     args = parser.parse_args()
     run_migrations(args) 
