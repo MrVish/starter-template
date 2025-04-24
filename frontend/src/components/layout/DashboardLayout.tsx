@@ -270,24 +270,31 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         w={{ base: 'full', md: 64 }}
         position="fixed"
         h="full"
-        bg="rgba(49, 130, 206, 0.4)"
-        backdropFilter="blur(20px)"
-        borderRightWidth="1px"
-        borderColor="rgba(255, 255, 255, 0.15)"
-        boxShadow="0 15px 30px rgba(0, 0, 0, 0.1)"
         overflowY="auto"
         zIndex={20}
+        className="sidebar-container"
+        sx={{
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            borderRadius: '8px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px',
+          },
+          '&:before': {
+            content: '""',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '16rem',
+            height: '100vh',
+            bgGradient: 'linear(to-br, blue.700, purple.800)',
+            opacity: 0.95,
+            zIndex: -1,
+          },
+        }}
       >
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          bgGradient="linear(to-br, blue.700, purple.800)"
-          opacity="0.95"
-          zIndex={-1}
-        />
         <Flex
           h="20"
           alignItems="center"
@@ -299,13 +306,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <Flex align="center">
             <Icon as={FiBarChart2} color="white" boxSize={6} mr={2} />
             <Text 
-              fontSize="2xl" 
+              fontSize="xl" 
               fontWeight="extrabold" 
               color="white"
               textShadow="0px 2px 4px rgba(0, 0, 0, 0.6)"
               letterSpacing="wide"
             >
-              MarketingAI
+              <chakra.span color="brand.500" fontSize="2xl">EXL</chakra.span>Marketing
             </Text>
           </Flex>
         </Flex>
@@ -390,31 +397,40 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       >
         <DrawerOverlay />
         <DrawerContent
-          bg="rgba(49, 130, 206, 0.4)"
-          backdropFilter="blur(20px)"
+          sx={{
+            '&:before': {
+              content: '""',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100vh',
+              bgGradient: 'linear(to-br, blue.700, purple.800)',
+              opacity: 0.95,
+              zIndex: -1,
+            },
+            '&::-webkit-scrollbar': {
+              width: '8px',
+              borderRadius: '8px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+            },
+          }}
         >
-          <Box
-            position="absolute"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bgGradient="linear(to-br, blue.700, purple.800)"
-            opacity="0.95"
-            zIndex={-1}
-          />
           <DrawerCloseButton color="white" />
           <DrawerHeader borderBottomWidth="1px" borderColor="rgba(255, 255, 255, 0.15)" color="white" pb={4}>
             <Flex align="center" mb={4}>
               <Icon as={FiBarChart2} color="white" boxSize={6} mr={2} />
               <Text 
-                fontSize="xl" 
+                fontSize="lg" 
                 fontWeight="extrabold"
                 textShadow="0px 2px 4px rgba(0, 0, 0, 0.6)"
                 letterSpacing="wide"
                 color="white"
               >
-                MarketingAI
+                <chakra.span color="brand.500" fontSize="xl">EXL</chakra.span>Marketing
               </Text>
             </Flex>
             

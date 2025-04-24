@@ -80,7 +80,7 @@ export default function Home() {
                 cursor="pointer"
                 onClick={() => window.location.href = '/'}
               >
-                Market<chakra.span color="blue.400">Analytics</chakra.span>
+                <chakra.span color="brand.500" fontSize="2xl">EXL</chakra.span>Marketing
               </Heading>
             </Flex>
             

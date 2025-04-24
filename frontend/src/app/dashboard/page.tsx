@@ -448,7 +448,7 @@ export default function Dashboard() {
           gap={3}
         >
           <Box>
-            <Heading as="h1" size="lg">Marketing Analytics Dashboard</Heading>
+            <Heading as="h1" size="lg" mb={4}>Marketing Analytics Dashboard</Heading>
             <Text color="gray.500">Welcome back, {session?.user?.name || 'User'}</Text>
           </Box>
           
