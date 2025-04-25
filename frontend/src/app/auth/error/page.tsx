@@ -41,7 +41,7 @@ export default function AuthError() {
   }, [searchParams]);
 
   return (
-    <Box bg={bg} minH="100vh" py={10} px={4}>
+    <Box bg="gray.50" minH="100vh" py={10} px={4}>
       <Container maxW="container.sm">
         <Box
           bg={cardBg}

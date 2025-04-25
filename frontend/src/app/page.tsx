@@ -25,11 +25,11 @@ import { FiArrowRight, FiFileText, FiCheckCircle, FiGlobe, FiHeadphones, FiLayer
 export default function Home() {
   const { data: session } = useSession();
   
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const bgColor = 'background.50';
   const cardBg = useColorModeValue('white', 'gray.800');
-  const primaryColor = useColorModeValue('blue.500', 'blue.300');
-  const secondaryColor = useColorModeValue('teal.500', 'teal.300');
-  const textColor = useColorModeValue('gray.700', 'gray.100');
+  const primaryColor = 'primary.500';
+  const secondaryColor = 'brand.500';
+  const textColor = 'secondary.500';
   const heroTextColor = "white";
 
   const FeatureCard = ({ icon, title, description }) => (
@@ -55,13 +55,13 @@ export default function Home() {
   );
 
   return (
-    <Box bg={bgColor}>
+    <Box bg="gray.50">
       {/* Navbar */}
       <Box 
         position="sticky"
         top={0}
         zIndex={100}
-        bg="rgba(26, 32, 44, 0.85)"
+        bg="rgba(46, 54, 67, 0.85)"
         backdropFilter="blur(10px)"
         boxShadow="md"
       >
@@ -89,13 +89,13 @@ export default function Home() {
               display={{ base: 'none', md: 'flex' }}
             >
               <Link href="#features">
-                <Text color="whiteAlpha.900" fontWeight="medium" _hover={{ color: "blue.300" }}>Features</Text>
+                <Text color="whiteAlpha.900" fontWeight="medium" _hover={{ color: "primary.300" }}>Features</Text>
               </Link>
               <Link href="#documentation">
-                <Text color="whiteAlpha.900" fontWeight="medium" _hover={{ color: "blue.300" }}>Documentation</Text>
+                <Text color="whiteAlpha.900" fontWeight="medium" _hover={{ color: "primary.300" }}>Documentation</Text>
               </Link>
               <Link href="#about">
-                <Text color="whiteAlpha.900" fontWeight="medium" _hover={{ color: "blue.300" }}>About</Text>
+                <Text color="whiteAlpha.900" fontWeight="medium" _hover={{ color: "primary.300" }}>About</Text>
               </Link>
             </HStack>
             
@@ -104,7 +104,7 @@ export default function Home() {
                 <Button 
                   onClick={() => window.location.href = '/dashboard'}
                   size="sm" 
-                  colorScheme="blue"
+                  colorScheme="primary"
                   borderRadius="lg"
                 >
                   Dashboard
@@ -123,7 +123,7 @@ export default function Home() {
                   </Button>
                   <Button 
                     onClick={() => window.location.href = '/auth/signin?callbackUrl=/dashboard'}
-                    colorScheme="blue" 
+                    colorScheme="brand" 
                     size="sm"
                     borderRadius="lg"
                   >
@@ -148,7 +148,7 @@ export default function Home() {
           left: 0,
           right: 0,
           bottom: 0,
-          bgGradient: "linear(to-br, blue.600, purple.700)",
+          bgGradient: "linear(to-br, primary.600, brand.500)",
           zIndex: -2,
         }}
       >
@@ -520,7 +520,7 @@ export default function Home() {
       </Box>
 
       {/* About Section */}
-      <Box py={20} id="about" bg={useColorModeValue('white', 'gray.800')}>
+      <Box py={20} id="about" bg="gray.50">
         <Container maxW="container.xl">
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={16} alignItems="center">
             <Box>
@@ -592,7 +592,7 @@ export default function Home() {
       </Box>
 
       {/* Trusted By Section */}
-      <Box py={16} bg={useColorModeValue('white', 'gray.800')}>
+      <Box py={16} bg="gray.50">
         <Container maxW="container.xl">
           <VStack spacing={8}>
             <Text 

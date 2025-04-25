@@ -380,6 +380,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         overflowY="auto"
         zIndex={20}
         className="sidebar-container"
+        bg="secondary.500"
+        boxShadow="lg"
         sx={{
           '&::-webkit-scrollbar': {
             width: '8px',
@@ -388,17 +390,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
           '&::-webkit-scrollbar-thumb': {
             backgroundColor: 'rgba(255, 255, 255, 0.2)',
             borderRadius: '8px',
-          },
-          '&:before': {
-            content: '""',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '18rem',
-            height: '100vh',
-            bgGradient: 'linear(to-br, blue.700, purple.800)',
-            opacity: 0.95,
-            zIndex: -1,
           },
         }}
       >
@@ -432,12 +423,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                 cursor="pointer"
                 alignItems="center"
                 justifyContent="space-between"
+                transition="background-color 0.2s ease, color 0.2s ease"
                 color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                bg={isActive(item.href) ? 'whiteAlpha.300' : 'transparent'}
-                _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+                bg={isActive(item.href) ? 'brand.500' : 'transparent'}
+                _hover={{ bg: 'primary.500', color: 'white' }}
                 onClick={(e) => handleItemClick(item, e)}
                 borderLeftWidth="4px"
-                borderLeftColor={isActive(item.href) ? "blue.300" : "transparent"}
+                borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
                 minH="48px"
               >
                 <Flex align="center" flex={1} minW="160px">
@@ -454,11 +446,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                   </Text>
                 </Flex>
                 {item.children && item.children.length > 0 && (
-                  <Icon 
-                    as={isExpanded(item.label) ? FiChevronDown : FiChevronRight} 
+                  <Icon
+                    as={FiChevronRight}
                     color="whiteAlpha.800"
                     boxSize={4}
                     flexShrink={0}
+                    transform={isExpanded(item.label) ? 'rotate(90deg)' : 'rotate(0deg)'}
+                    transition="transform 0.2s ease"
                   />
                 )}
               </Flex>
@@ -471,12 +465,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                       py={2}
                       cursor="pointer"
                       alignItems="center"
+                      transition="background-color 0.2s ease, color 0.2s ease"
                       color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
-                      bg={isActive(child.href) ? 'whiteAlpha.300' : 'transparent'}
-                      _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+                      bg={isActive(child.href) ? 'brand.500' : 'transparent'}
+                      _hover={{ bg: 'primary.500', color: 'white' }}
                       onClick={() => handleNavigation(child.href)}
                       borderLeftWidth="4px"
-                      borderLeftColor={isActive(child.href) ? "blue.300" : "transparent"}
+                      borderLeftColor={isActive(child.href) ? 'brand.500' : 'transparent'}
                     >
                       <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
                       <Text 
@@ -517,18 +512,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
       >
         <DrawerOverlay />
         <DrawerContent
+          bg="secondary.500"
           sx={{
-            '&:before': {
-              content: '""',
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100vh',
-              bgGradient: 'linear(to-br, blue.700, purple.800)',
-              opacity: 0.95,
-              zIndex: -1,
-            },
             '&::-webkit-scrollbar': {
               width: '8px',
               borderRadius: '8px',
@@ -559,17 +544,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
               <PopoverTrigger>
                 <Flex
                   align="center"
-                  bg="whiteAlpha.200"
+                  bg="background.100"
                   borderRadius="md"
                   px={3}
                   py={2}
                   width="100%"
                   mt={2}
-                  _hover={{ bg: 'whiteAlpha.300' }}
+                  transition="background-color 0.2s ease"
+                  _hover={{ bg: 'background.200' }}
                   cursor="pointer"
                 >
-                  <Icon as={FiSearch} color="white" boxSize={4} mr={2} />
-                  <Text color="whiteAlpha.700" fontSize="sm">Search...</Text>
+                  <Icon as={FiSearch} color="gray.700" boxSize={4} mr={2} />
+                  <Text color="gray.700" fontSize="sm">Search...</Text>
                 </Flex>
               </PopoverTrigger>
               <PopoverContent>
@@ -612,9 +598,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                     cursor="pointer"
                     alignItems="center"
                     justifyContent="space-between"
+                    transition="background-color 0.2s ease, color 0.2s ease"
                     color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                    bg={isActive(item.href) ? 'whiteAlpha.300' : 'transparent'}
-                    _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+                    bg={isActive(item.href) ? 'brand.500' : 'transparent'}
+                    _hover={{ bg: 'primary.500', color: 'white' }}
                     onClick={(e) => {
                       if (item.children && item.children.length > 0) {
                         toggleExpand(item.label, e);
@@ -624,7 +611,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                       }
                     }}
                     borderLeftWidth="4px"
-                    borderLeftColor={isActive(item.href) ? "blue.300" : "transparent"}
+                    borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
                     minH="48px"
                   >
                     <Flex align="center" flex={1} minW="160px">
@@ -640,11 +627,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                       </Text>
                     </Flex>
                     {item.children && item.children.length > 0 && (
-                      <Icon 
-                        as={isExpanded(item.label) ? FiChevronDown : FiChevronRight} 
+                      <Icon
+                        as={FiChevronRight}
                         color="whiteAlpha.800"
                         boxSize={4}
                         flexShrink={0}
+                        transform={isExpanded(item.label) ? 'rotate(90deg)' : 'rotate(0deg)'}
+                        transition="transform 0.2s ease"
                       />
                     )}
                   </Flex>
@@ -657,15 +646,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                           py={2}
                           cursor="pointer"
                           alignItems="center"
+                          transition="background-color 0.2s ease, color 0.2s ease"
                           color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
-                          bg={isActive(child.href) ? 'whiteAlpha.300' : 'transparent'}
-                          _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+                          bg={isActive(child.href) ? 'brand.500' : 'transparent'}
+                          _hover={{ bg: 'primary.500', color: 'white' }}
                           onClick={() => {
                             handleNavigation(child.href);
                             onClose();
                           }}
                           borderLeftWidth="4px"
-                          borderLeftColor={isActive(child.href) ? "blue.300" : "transparent"}
+                          borderLeftColor={isActive(child.href) ? 'brand.500' : 'transparent'}
                         >
                           <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
                           <Text 
@@ -711,22 +701,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
           position="sticky"
           top={0}
           zIndex={10}
-          bg="rgba(49, 130, 206, 0.4)"
+          bg="secondary.500"
           backdropFilter="blur(20px)"
           borderBottomWidth="1px"
           borderColor="rgba(255, 255, 255, 0.15)"
           boxShadow="0 8px 20px rgba(0, 0, 0, 0.1)"
         >
-          <Box
-            position="absolute"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bgGradient="linear(to-br, blue.700, purple.800)"
-            opacity="0.95"
-            zIndex={-1}
-          />
           <Flex
             justify="space-between"
             align="center"
@@ -751,17 +731,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                 <PopoverTrigger>
                   <Flex
                     align="center"
-                    bg="whiteAlpha.200"
+                    bg="background.100"
                     borderRadius="md"
                     px={3}
                     py={2}
                     display={{ base: 'none', md: 'flex' }}
                     width="100%"
-                    _hover={{ bg: 'whiteAlpha.300' }}
+                    transition="background-color 0.2s ease"
+                    _hover={{ bg: 'background.200' }}
                     cursor="pointer"
                   >
-                    <Icon as={FiSearch} color="white" boxSize={4} mr={2} />
-                    <Text color="whiteAlpha.700" fontSize="sm">Search...</Text>
+                    <Icon as={FiSearch} color="gray.700" boxSize={4} mr={2} />
+                    <Text color="gray.700" fontSize="sm">Search...</Text>
                   </Flex>
                 </PopoverTrigger>
                 <PopoverContent w={{ md: '320px' }}>

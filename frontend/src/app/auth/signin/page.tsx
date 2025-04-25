@@ -60,28 +60,14 @@ export default function SignInPage() {
 
   if (!providers) {
     return (
-      <Box bg={bg} minH="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box bg="gray.50" minH="100vh" display="flex" alignItems="center" justifyContent="center">
         <Spinner size="xl" color={primaryColor} />
       </Box>
     );
   }
 
   return (
-    <Box 
-      minH="100vh" 
-      position="relative" 
-      overflow="hidden"
-      _before={{
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        bgGradient: "linear(to-br, blue.700, purple.800)",
-        zIndex: -2,
-      }}
-    >
+    <Box bg="gray.50" minH="100vh">
       <Container maxW="container.xl" py={10} position="relative" zIndex={1}>
         <Button 
           onClick={() => window.location.href = '/'}
@@ -100,11 +86,10 @@ export default function SignInPage() {
           direction={{ base: 'column', md: 'row' }} 
           borderRadius="2xl" 
           overflow="hidden" 
-          boxShadow="0 25px 50px rgba(0, 0, 0, 0.3)"
-          bg="rgba(255, 255, 255, 0.03)"
-          backdropFilter="blur(16px)"
+          boxShadow="md"
+          bg="whiteAlpha.100"
           borderWidth="1px"
-          borderColor="rgba(255, 255, 255, 0.1)"
+          borderColor="background.200"
           position="relative"
           transform="translateY(0)"
           transition="all 0.3s ease"
@@ -116,8 +101,8 @@ export default function SignInPage() {
           {/* Left side - Image/Branding */}
           <Box 
             w={{ base: '100%', md: '40%' }} 
-            bg="rgba(49, 130, 206, 0.4)"
-            color={primaryBgTextColor}
+            bg="secondary.500"
+            color="white"
             p={10}
             display="flex"
             flexDirection="column"
@@ -167,7 +152,6 @@ export default function SignInPage() {
                 bottom="0"
               >
               </Box>
-              <figcaption className="sr-only">Login Illustration displaying user signing in</figcaption>
             </Box>
           </Box>
 
@@ -175,8 +159,9 @@ export default function SignInPage() {
           <Box 
             w={{ base: '100%', md: '60%' }} 
             p={{ base: 8, md: 12 }}
-            bg="white"
-            backdropFilter="blur(20px)"
+            bg="gray.50"
+            boxShadow="sm"
+            borderRadius="lg"
           >
             <VStack spacing={8} align="flex-start" width="100%">
               <Heading 
@@ -231,7 +216,7 @@ export default function SignInPage() {
                       </InputGroup>
                     </FormControl>
                     <Button 
-                      colorScheme="blue" 
+                      colorScheme="primary" 
                       type="submit" 
                       width="100%"
                       size="lg"
@@ -262,8 +247,8 @@ export default function SignInPage() {
                         width="100%"
                         variant="outline"
                         size="lg"
-                        borderColor={borderColor}
-                        _hover={{ bg: 'gray.50' }}
+                        borderColor="primary.500"
+                        _hover={{ bg: 'background.200' }}
                         borderRadius="lg"
                       >
                         Sign in with Google
@@ -276,8 +261,8 @@ export default function SignInPage() {
                         width="100%"
                         variant="outline"
                         size="lg"
-                        borderColor={borderColor}
-                        _hover={{ bg: 'gray.50' }}
+                        borderColor="primary.500"
+                        _hover={{ bg: 'background.200' }}
                         borderRadius="lg"
                       >
                         Sign in with Microsoft

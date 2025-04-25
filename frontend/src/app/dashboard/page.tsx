@@ -473,6 +473,7 @@ export default function Dashboard() {
     return (
       <Flex 
         h="100vh" 
+        bg="gray.50"
         align="center" 
         justify="center" 
         direction="column"

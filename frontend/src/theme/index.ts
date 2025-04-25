@@ -7,7 +7,7 @@ const colors = {
     200: '#90cdf4',
     300: '#63b3ed',
     400: '#4299e1',
-    500: '#3182ce', // Main blue color
+    500: '#005071', // Updated to standard primary color
     600: '#2b6cb0',
     700: '#2c5282',
     800: '#2a4365',
@@ -19,7 +19,7 @@ const colors = {
     200: '#D1D1D1',
     300: '#B8B8B8',
     400: '#9E9E9E',
-    500: '#808080', // Main grey color
+    500: '#2E3643', // Updated to standard secondary color
     600: '#666666',
     700: '#4D4D4D',
     800: '#333333',
@@ -38,12 +38,12 @@ const colors = {
     900: '#332500',
   },
   background: {
-    50: '#f9fcfe',
+    50: '#DCF3FA', // Updated to standard background light color
     100: '#eff8fb',
     200: '#e6f3f8',
     300: '#dceff5',
     400: '#d2eaf2',
-    500: '#c8e6ef', // Light teal background
+    500: '#DCF3FA', // Updated background color
     600: '#b1d8e6',
     700: '#9acbdd',
     800: '#83bdd4',
@@ -117,7 +117,7 @@ const colors = {
     200: '#f79a8b',
     300: '#f3735e',
     400: '#ef4a31',
-    500: '#FB4E0B', // Company brand orange
+    500: '#FB4E0B', // Standard brand color (unchanged)
     600: '#D7470A',
     700: '#B04008',
     800: '#8A3907',
@@ -133,8 +133,8 @@ const fonts = {
 const styles = {
   global: {
     body: {
-      bg: 'gray.50',
-      color: 'gray.800',
+      bg: 'background.50', // Use standard background color
+      color: 'secondary.500', // Use standard secondary color for text
     },
     '::selection': {
       backgroundColor: 'accent.100',
