@@ -374,7 +374,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
       <Box
         display={{ base: 'none', md: 'flex' }}
         flexDirection="column"
-        w={{ base: 'full', md: 64 }}
+        w={{ base: 'full', md: 72 }}
         position="fixed"
         h="full"
         overflowY="auto"
@@ -394,7 +394,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
             position: 'fixed',
             top: 0,
             left: 0,
-            width: '16rem',
+            width: '18rem',
             height: '100vh',
             bgGradient: 'linear(to-br, blue.700, purple.800)',
             opacity: 0.95,
@@ -436,16 +436,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                 bg={isActive(item.href) ? 'whiteAlpha.300' : 'transparent'}
                 _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
                 onClick={(e) => handleItemClick(item, e)}
-                borderLeftWidth={isActive(item.href) ? "4px" : "0px"}
-                borderLeftColor="blue.300"
+                borderLeftWidth="4px"
+                borderLeftColor={isActive(item.href) ? "blue.300" : "transparent"}
+                minH="48px"
               >
-                <Flex align="center">
-                  <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} />
+                <Flex align="center" flex={1} minW="160px">
+                  <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} flexShrink={0} />
                   <Text 
                     fontSize="sm" 
                     fontWeight={isActive(item.href) ? "extrabold" : "medium"}
                     letterSpacing="0.2px"
                     color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                    isTruncated
+                    title={item.label}
                   >
                     {item.label}
                   </Text>
@@ -455,6 +458,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                     as={isExpanded(item.label) ? FiChevronDown : FiChevronRight} 
                     color="whiteAlpha.800"
                     boxSize={4}
+                    flexShrink={0}
                   />
                 )}
               </Flex>
@@ -471,14 +475,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                       bg={isActive(child.href) ? 'whiteAlpha.300' : 'transparent'}
                       _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
                       onClick={() => handleNavigation(child.href)}
-                      borderLeftWidth={isActive(child.href) ? "4px" : "0px"}
-                      borderLeftColor="blue.300"
+                      borderLeftWidth="4px"
+                      borderLeftColor={isActive(child.href) ? "blue.300" : "transparent"}
                     >
                       <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
                       <Text 
                         fontSize="sm" 
                         fontWeight={isActive(child.href) ? "bold" : "medium"}
-                        letterSpacing="0.2px"
                         color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
                       >
                         {child.label}
@@ -620,15 +623,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                         onClose();
                       }
                     }}
-                    borderLeftWidth={isActive(item.href) ? "4px" : "0px"}
-                    borderLeftColor="blue.300"
+                    borderLeftWidth="4px"
+                    borderLeftColor={isActive(item.href) ? "blue.300" : "transparent"}
+                    minH="48px"
                   >
-                    <Flex align="center">
-                      <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} />
+                    <Flex align="center" flex={1} minW="160px">
+                      <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} flexShrink={0} />
                       <Text
                         fontSize="md" 
                         fontWeight={isActive(item.href) ? "bold" : "medium"}
                         color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                        isTruncated
+                        title={item.label}
                       >
                         {item.label}
                       </Text>
@@ -638,6 +644,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                         as={isExpanded(item.label) ? FiChevronDown : FiChevronRight} 
                         color="whiteAlpha.800"
                         boxSize={4}
+                        flexShrink={0}
                       />
                     )}
                   </Flex>
@@ -657,8 +664,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                             handleNavigation(child.href);
                             onClose();
                           }}
-                          borderLeftWidth={isActive(child.href) ? "4px" : "0px"}
-                          borderLeftColor="blue.300"
+                          borderLeftWidth="4px"
+                          borderLeftColor={isActive(child.href) ? "blue.300" : "transparent"}
                         >
                           <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
                           <Text 
@@ -693,7 +700,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
 
       {/* Main Content */}
       <Box
-        ml={{ base: 0, md: 64 }}
+        ml={{ base: 0, md: 72 }}
         flex={1}
         bg="gray.50"
         minH="100vh"
