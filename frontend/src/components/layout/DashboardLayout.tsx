@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import {
   Box,
   Flex,
@@ -46,6 +46,7 @@ import {
   PopoverContent,
   PopoverArrow,
   PopoverBody,
+  Spinner,
 } from '@chakra-ui/react';
 import {
   FiHome,
@@ -75,6 +76,7 @@ import {
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import NextLink from 'next/link';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -268,7 +270,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         { icon: FiZap, label: 'Capabilities', href: '/data/capabilities' },
       ],
     },
-    { icon: FiSettings, label: 'Settings', href: '/settings' },
     {
       icon: FiShield,
       label: 'Administration',
@@ -279,6 +280,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         { icon: FiLock, label: 'Permissions', href: '/admin/permissions' },
       ],
     },
+    { icon: FiSettings, label: 'Settings', href: '/settings' },
   ];
 
   // Check if the current user has admin privileges
@@ -322,21 +324,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
     });
   }, [menuItems, session, isUserAdmin]);
 
+  // Prefetch menu and child routes for faster navigation
+  useEffect(() => {
+    filteredMenuItems.forEach(item => {
+      router.prefetch(item.href);
+      item.children?.forEach(child => router.prefetch(child.href));
+    });
+  }, [filteredMenuItems, router]);
+
+  // Use React 18 transition to avoid blanking during navigation
+  const [isPending, startTransition] = useTransition();
   const handleNavigation = (href: string) => {
-    // Get the parent item for this link, if any
     const parentItem = findParentItem(href);
-    
-    // When navigating to a page:
-    // 1. Keep only the parent of this page expanded
-    // 2. Close all other expanded sections
     if (parentItem) {
       setExpandedItems([parentItem.label]);
     } else {
-      // If it's a top-level page with no parent, close all expanded items
       setExpandedItems([]);
     }
-    
-    router.push(href);
+    startTransition(() => {
+      router.push(href);
+    });
   };
 
   // Handle item click - navigate if no children, otherwise toggle expand
@@ -367,6 +374,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
   const filteredPages = pagesList.filter(p =>
     p.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Spinner overlay color for navigation
+  const overlayBg = useColorModeValue('rgba(255,255,255,0.7)', 'rgba(0,0,0,0.7)');
 
   return (
     <Flex h="100vh">
@@ -417,71 +427,102 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         <VStack spacing={0} align="stretch" mt={4}>
           {filteredMenuItems.map((item) => (
             <Box key={item.label}>
-              <Flex
-                px={6}
-                py={3}
-                cursor="pointer"
-                alignItems="center"
-                justifyContent="space-between"
-                transition="background-color 0.2s ease, color 0.2s ease"
-                color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                bg={isActive(item.href) ? 'brand.500' : 'transparent'}
-                _hover={{ bg: 'primary.500', color: 'white' }}
-                onClick={(e) => handleItemClick(item, e)}
-                borderLeftWidth="4px"
-                borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
-                minH="48px"
-              >
-                <Flex align="center" flex={1} minW="160px">
-                  <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} flexShrink={0} />
-                  <Text 
-                    fontSize="sm" 
-                    fontWeight={isActive(item.href) ? "extrabold" : "medium"}
-                    letterSpacing="0.2px"
-                    color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                    isTruncated
-                    title={item.label}
-                  >
-                    {item.label}
-                  </Text>
+              {item.children?.length > 0 ? (
+                <Flex
+                  px={6}
+                  py={3}
+                  cursor="pointer"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  transition="background-color 0.2s ease, color 0.2s ease"
+                  color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                  bg={isActive(item.href) ? 'brand.500' : 'transparent'}
+                  _hover={{ bg: 'primary.500', color: 'white' }}
+                  onClick={(e) => toggleExpand(item.label, e)}
+                  borderLeftWidth="4px"
+                  borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
+                  minH="48px"
+                >
+                  <Flex align="center" flex={1} minW="160px">
+                    <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} flexShrink={0} />
+                    <Text 
+                      fontSize="sm" 
+                      fontWeight={isActive(item.href) ? "extrabold" : "medium"}
+                      letterSpacing="0.2px"
+                      color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                      isTruncated
+                      title={item.label}
+                    >
+                      {item.label}
+                    </Text>
+                  </Flex>
+                  {item.children && item.children.length > 0 && (
+                    <Icon
+                      as={FiChevronRight}
+                      color="whiteAlpha.800"
+                      boxSize={4}
+                      flexShrink={0}
+                      transform={isExpanded(item.label) ? 'rotate(90deg)' : 'rotate(0deg)'}
+                      transition="transform 0.2s ease"
+                    />
+                  )}
                 </Flex>
-                {item.children && item.children.length > 0 && (
-                  <Icon
-                    as={FiChevronRight}
-                    color="whiteAlpha.800"
-                    boxSize={4}
-                    flexShrink={0}
-                    transform={isExpanded(item.label) ? 'rotate(90deg)' : 'rotate(0deg)'}
-                    transition="transform 0.2s ease"
-                  />
-                )}
-              </Flex>
+              ) : (
+                <NextLink href={item.href} passHref>
+                  <Flex
+                    px={6}
+                    py={3}
+                    alignItems="center"
+                    transition="background-color 0.2s ease, color 0.2s ease"
+                    color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                    bg={isActive(item.href) ? 'brand.500' : 'transparent'}
+                    _hover={{ bg: 'primary.500', color: 'white' }}
+                    borderLeftWidth="4px"
+                    borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
+                    minH="48px"
+                    cursor="pointer"
+                  >
+                    <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} flexShrink={0} />
+                    <Text 
+                      fontSize="sm" 
+                      fontWeight={isActive(item.href) ? "extrabold" : "medium"}
+                      letterSpacing="0.2px"
+                      color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                      isTruncated
+                      title={item.label}
+                    >
+                      {item.label}
+                    </Text>
+                  </Flex>
+                </NextLink>
+              )}
               {item.children && isExpanded(item.label) && (
                 <VStack spacing={0} align="stretch" pl={10}>
                   {item.children.map((child) => (
-                    <Flex
-                      key={child.label}
-                      px={6}
-                      py={2}
-                      cursor="pointer"
-                      alignItems="center"
-                      transition="background-color 0.2s ease, color 0.2s ease"
-                      color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
-                      bg={isActive(child.href) ? 'brand.500' : 'transparent'}
-                      _hover={{ bg: 'primary.500', color: 'white' }}
-                      onClick={() => handleNavigation(child.href)}
-                      borderLeftWidth="4px"
-                      borderLeftColor={isActive(child.href) ? 'brand.500' : 'transparent'}
-                    >
-                      <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
-                      <Text 
-                        fontSize="sm" 
-                        fontWeight={isActive(child.href) ? "bold" : "medium"}
+                    <NextLink key={child.label} href={child.href} passHref>
+                      <Flex
+                        px={6}
+                        py={2}
+                        cursor="pointer"
+                        alignItems="center"
+                        transition="background-color 0.2s ease, color 0.2s ease"
                         color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
+                        bg={isActive(child.href) ? 'brand.500' : 'transparent'}
+                        _hover={{ bg: 'primary.500', color: 'white' }}
+                        onClick={() => setExpandedItems([item.label])}
+                        borderLeftWidth="4px"
+                        borderLeftColor={isActive(child.href) ? 'brand.500' : 'transparent'}
                       >
-                        {child.label}
-                      </Text>
-                    </Flex>
+                        <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
+                        <Text 
+                          fontSize="sm" 
+                          fontWeight={isActive(child.href) ? "bold" : "medium"}
+                          color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
+                        >
+                          {child.label}
+                        </Text>
+                      </Flex>
+                    </NextLink>
                   ))}
                 </VStack>
               )}
@@ -888,6 +929,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
             </HStack>
           </Flex>
         </Box>
+
+        {/* Navigation Spinner Overlay */}
+        {isPending && (
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            bg={overlayBg}
+            zIndex={20}
+          >
+            <Flex h="100%" align="center" justify="center">
+              <Spinner size="xl" color="primary.500" />
+            </Flex>
+          </Box>
+        )}
 
         {/* Page Content */}
         <Box p={4}>

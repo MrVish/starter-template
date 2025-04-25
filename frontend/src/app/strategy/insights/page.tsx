@@ -57,46 +57,47 @@ import {
   FiClock,
   FiMoreVertical,
   FiCalendar,
+  FiPieChart,
 } from 'react-icons/fi';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 
-// Sample performance data
-const PERFORMANCE_METRICS = [
+// Sample key metrics data
+const KEY_METRICS = [
   {
     id: 1,
-    metric: 'Customer Acquisition',
-    current: 1250,
-    previous: 980,
-    change: '+27.6%',
+    metric: 'New Client Acquisition',
+    value: '1,250',
+    target: '2,000',
+    period: 'Monthly',
+    change: '+12.5%',
     trend: 'up',
-    target: 1500,
   },
   {
     id: 2,
-    metric: 'Average Revenue per Customer',
-    current: '$850',
-    previous: '$720',
-    change: '+18.1%',
+    metric: 'Average Assets Under Management',
+    value: '$385K',
+    target: '$300',
+    period: 'Monthly',
+    change: '+8.3%',
     trend: 'up',
-    target: '$1000',
   },
   {
     id: 3,
-    metric: 'Customer Retention Rate',
-    current: '92%',
-    previous: '88%',
-    change: '+4.5%',
-    trend: 'up',
+    metric: 'Client Retention Rate',
+    value: '92.4%',
     target: '95%',
+    period: 'Annual',
+    change: '+2.1%',
+    trend: 'up',
   },
   {
     id: 4,
-    metric: 'Marketing ROI',
-    current: '3.2x',
-    previous: '2.8x',
-    change: '+14.3%',
+    metric: 'Financial Advisory ROI',
+    value: '387%',
+    target: '450%',
+    period: 'Quarterly',
+    change: '+15.2%',
     trend: 'up',
-    target: '4.0x',
   },
 ];
 
@@ -104,39 +105,63 @@ const PERFORMANCE_METRICS = [
 const CAMPAIGN_PERFORMANCE = [
   {
     id: 1,
-    name: 'Q1 Digital Banking Push',
-    channel: 'Digital',
-    startDate: '2024-01-01',
-    endDate: '2024-03-31',
-    budget: '$500,000',
-    spend: '$450,000',
-    revenue: '$1,800,000',
-    roi: '3.6x',
-    status: 'Completed',
+    name: 'Retirement Planning Webinars',
+    status: 'Active',
+    start: '2023-06-01',
+    end: '2023-08-31',
+    budget: '$85,000',
+    spend: '$45,000',
+    results: {
+      attendees: '2,850',
+      leads: '620',
+      conversions: '420',
+      revenue: '$128,500',
+    },
   },
   {
     id: 2,
-    name: 'Investment Products Campaign',
-    channel: 'Email',
-    startDate: '2024-02-15',
-    endDate: '2024-03-15',
-    budget: '$250,000',
-    spend: '$200,000',
-    revenue: '$750,000',
-    roi: '3.0x',
-    status: 'Completed',
+    name: 'Wealth Management Advisor Program',
+    status: 'Active',
+    start: '2023-05-15',
+    end: '2023-09-30',
+    budget: '$120,000',
+    spend: '$62,500',
+    results: {
+      consultations: '380',
+      referrals: '85',
+      conversions: '280',
+      revenue: '$325,000',
+    },
   },
   {
     id: 3,
-    name: 'Summer Savings Promotion',
-    channel: 'Social',
-    startDate: '2024-03-01',
-    endDate: '2024-05-31',
-    budget: '$300,000',
-    spend: '$150,000',
-    revenue: '$450,000',
-    roi: '2.0x',
-    status: 'In Progress',
+    name: 'Investment Portfolio Diversification',
+    status: 'Active',
+    start: '2023-07-01',
+    end: '2023-10-31',
+    budget: '$65,000',
+    spend: '$35,000',
+    results: {
+      educational_sessions: '45',
+      portfolio_reviews: '320',
+      conversions: '180',
+      revenue: '$185,000',
+    },
+  },
+  {
+    id: 4,
+    name: 'High-Yield Savings Campaign',
+    status: 'Planned',
+    start: '2023-09-01',
+    end: '2023-12-31',
+    budget: '$70,000',
+    spend: '$0',
+    results: {
+      account_inquiries: '0',
+      new_accounts: '0',
+      conversions: '0',
+      revenue: '$0',
+    },
   },
 ];
 
@@ -161,13 +186,13 @@ export default function StrategyInsights() {
     <DashboardLayout>
       <Box mb={6}>
         <HStack spacing={4} align="center" mb={6}>
-          <Icon as={FiBarChart2} boxSize={8} color="blue.500" />
+          <Icon as={FiPieChart} boxSize={8} color="blue.500" />
           <Box>
             <Heading as="h1" size="xl" color="secondary.700">
               Strategy Insights
             </Heading>
             <Text color="gray.600">
-              Analyze marketing performance and strategy effectiveness
+              Analyze and track performance of your financial marketing strategies
             </Text>
           </Box>
         </HStack>
@@ -188,14 +213,14 @@ export default function StrategyInsights() {
 
         {/* Performance Metrics */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-          {PERFORMANCE_METRICS.map((metric) => (
+          {KEY_METRICS.map((metric) => (
             <Card key={metric.id} bg={cardBg}>
               <CardBody>
                 <VStack align="start" spacing={4}>
                   <Text color="gray.500">{metric.metric}</Text>
                   <HStack justify="space-between" w="full">
                     <Text fontSize="2xl" fontWeight="bold">
-                      {metric.current}
+                      {metric.value}
                     </Text>
                     <Badge
                       colorScheme={getTrendColor(metric.trend)}
@@ -239,13 +264,11 @@ export default function StrategyInsights() {
                   <Thead>
                     <Tr>
                       <Th>Campaign Name</Th>
-                      <Th>Channel</Th>
+                      <Th>Status</Th>
                       <Th>Period</Th>
                       <Th>Budget</Th>
                       <Th>Spend</Th>
-                      <Th>Revenue</Th>
-                      <Th>ROI</Th>
-                      <Th>Status</Th>
+                      <Th>Results</Th>
                       <Th>Actions</Th>
                     </Tr>
                   </Thead>
@@ -253,26 +276,33 @@ export default function StrategyInsights() {
                     {CAMPAIGN_PERFORMANCE.map((campaign) => (
                       <Tr key={campaign.id}>
                         <Td fontWeight="medium">{campaign.name}</Td>
-                        <Td>{campaign.channel}</Td>
-                        <Td>
-                          <VStack align="start" spacing={0}>
-                            <Text fontSize="sm">{campaign.startDate}</Text>
-                            <Text fontSize="sm">{campaign.endDate}</Text>
-                          </VStack>
-                        </Td>
-                        <Td>{campaign.budget}</Td>
-                        <Td>{campaign.spend}</Td>
-                        <Td>{campaign.revenue}</Td>
-                        <Td>
-                          <Badge colorScheme={parseFloat(campaign.roi) >= 3 ? 'green' : 'orange'}>
-                            {campaign.roi}
-                          </Badge>
-                        </Td>
                         <Td>
                           <Badge colorScheme={getStatusColor(campaign.status)}>
                             {campaign.status}
                           </Badge>
                         </Td>
+                        <Td>
+                          <VStack align="start" spacing={0}>
+                            <Text fontSize="sm">{campaign.start}</Text>
+                            <Text fontSize="sm">{campaign.end}</Text>
+                          </VStack>
+                        </Td>
+                        <Td>{campaign.budget}</Td>
+                        <Td>{campaign.spend}</Td>
+                        <Td>
+                                  {campaign.results.attendees && (
+                                    <Text fontSize="sm">Attendees: {campaign.results.attendees}</Text>
+                                  )}
+                                  {campaign.results.leads && (
+                                    <Text fontSize="sm">Leads: {campaign.results.leads}</Text>
+                                  )}
+                                  {campaign.results.conversions && (
+                                    <Text fontSize="sm">Conversions: {campaign.results.conversions}</Text>
+                                  )}
+                                  {campaign.results.revenue && (
+                                    <Text fontSize="sm">Revenue: {campaign.results.revenue}</Text>
+                                  )}
+                                </Td>
                         <Td>
                           <Menu>
                             <MenuButton

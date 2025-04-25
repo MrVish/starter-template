@@ -77,71 +77,67 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 const MARKETING_STRATEGIES = [
   {
     id: 1,
-    name: 'Digital Banking Growth Plan',
-    description: 'Strategy to increase digital banking adoption across all segments',
+    name: 'Digital Wealth Management Transition',
+    description: 'Strategy to increase digital portfolio management adoption across high-net-worth clients',
+    startDate: '2023-01-15',
+    endDate: '2023-12-31',
     status: 'Active',
-    priority: 'High',
-    budget: '$1,200,000',
-    timeframe: 'Q1-Q3 2024',
-    owner: 'Alex Johnson',
-    progress: 45,
-    kpis: [
-      { name: 'Digital Adoption', target: '30%', current: '22%', trend: 'up' },
-      { name: 'Mobile Transactions', target: '65%', current: '48%', trend: 'up' },
-      { name: 'Customer Acquisition', target: '15,000', current: '8,700', trend: 'up' },
-    ],
-    lastUpdated: '2024-03-15',
+    progress: 65,
+    owner: 'Sarah Johnson',
+    team: ['Marketing', 'Digital', 'IT'],
+    metrics: [
+      { name: 'Portfolio Digital Adoption', target: '+40%', current: '+22%', trend: 'up' },
+      { name: 'Client Satisfaction', target: '4.8/5', current: '4.3/5', trend: 'up' },
+      { name: 'New AUM Acquired', target: '$500M', current: '$325M', trend: 'up' },
+    ]
   },
   {
     id: 2,
-    name: 'Investment Portfolio Expansion',
-    description: 'Strategy to grow investment portfolio services and customer base',
+    name: 'Retirement Planning Advisory Expansion',
+    description: 'Strategy to grow retirement planning advisory services and client base',
+    startDate: '2023-02-01',
+    endDate: '2023-06-30',
     status: 'Active',
-    priority: 'Medium',
-    budget: '$850,000',
-    timeframe: 'Q2-Q4 2024',
-    owner: 'Sarah Williams',
-    progress: 25,
-    kpis: [
-      { name: 'Portfolio Value', target: '+20%', current: '+8%', trend: 'up' },
-      { name: 'Investment Customers', target: '8,000', current: '3,200', trend: 'up' },
-      { name: 'Fee Revenue', target: '+15%', current: '+6%', trend: 'up' },
-    ],
-    lastUpdated: '2024-03-14',
+    progress: 40,
+    owner: 'Michael Chen',
+    team: ['Investment', 'Marketing', 'Product'],
+    metrics: [
+      { name: 'New Advisory Packages', target: '5', current: '2', trend: 'up' },
+      { name: 'Retirement AUM', target: '+$350M', current: '+$140M', trend: 'up' },
+      { name: 'Pre-Retirement Clients', target: '12,000', current: '5,400', trend: 'up' },
+    ]
   },
   {
     id: 3,
-    name: 'Small Business Banking Initiative',
-    description: 'Strategy to increase presence in small business banking market',
+    name: 'Personalized Wealth Dashboard',
+    description: 'Launch of personalized wealth management dashboard with AI insights',
+    startDate: '2023-03-10',
+    endDate: '2023-08-15',
     status: 'Planning',
-    priority: 'Medium',
-    budget: '$950,000',
-    timeframe: 'Q3 2024-Q1 2025',
-    owner: 'Michael Chen',
-    progress: 10,
-    kpis: [
-      { name: 'SMB Accounts', target: '10,000', current: '1,200', trend: 'up' },
-      { name: 'Loan Volume', target: '+25%', current: '+5%', trend: 'up' },
-      { name: 'Market Share', target: '18%', current: '12%', trend: 'up' },
-    ],
-    lastUpdated: '2024-03-10',
+    progress: 15,
+    owner: 'Emily Wong',
+    team: ['UX/UI', 'Mobile', 'IT'],
+    metrics: [
+      { name: 'Portfolio Insight Adoption', target: '60%', current: '0%', trend: 'neutral' },
+      { name: 'Financial Planning Actions', target: '+45%', current: '0%', trend: 'neutral' },
+      { name: 'Cross-Asset Class Views', target: '+35%', current: '0%', trend: 'neutral' },
+    ]
   },
   {
     id: 4,
-    name: 'Customer Loyalty Program Redesign',
-    description: 'Strategy to enhance and improve the customer loyalty program',
-    status: 'On Hold',
-    priority: 'Low',
-    budget: '$500,000',
-    timeframe: 'Q4 2024',
-    owner: 'Jessica Brown',
+    name: 'Premier Client Benefits Program',
+    description: 'Strategy to enhance benefits and experiences for high-value banking clients',
+    startDate: '2023-04-01',
+    endDate: '2023-09-30',
+    status: 'Draft',
     progress: 5,
-    kpis: [
-      { name: 'Loyalty Enrollment', target: '+40%', current: '0%', trend: 'neutral' },
-      { name: 'Program Engagement', target: '60%', current: '32%', trend: 'neutral' },
-      { name: 'Customer Retention', target: '+15%', current: '0%', trend: 'neutral' },
-    ],
-    lastUpdated: '2024-03-08',
+    owner: 'David Turner',
+    team: ['Marketing', 'Customer Experience'],
+    metrics: [
+      { name: 'Premier Client Retention', target: '+18%', current: '0%', trend: 'neutral' },
+      { name: 'Share of Wallet', target: '+25%', current: '0%', trend: 'neutral' },
+      { name: 'Net Promoter Score', target: '+22pts', current: '0pts', trend: 'neutral' },
+    ]
   },
 ];
 
@@ -205,10 +201,10 @@ export default function StrategyPlanning() {
           <Icon as={FiTarget} boxSize={8} color="blue.500" />
           <Box>
             <Heading as="h1" size="xl" color="secondary.700">
-              Strategy Planning
+              Marketing Strategy
             </Heading>
             <Text color="gray.600">
-              Create and manage long-term marketing strategies
+              Create and manage long-term financial marketing strategies
             </Text>
           </Box>
         </HStack>
@@ -353,16 +349,22 @@ export default function StrategyPlanning() {
                   <HStack justify="space-between" width="full">
                     <Box>
                       <Text fontWeight="bold" fontSize="sm" color="gray.500">Budget</Text>
-                      <Text>{strategy.budget}</Text>
+                      <HStack align="start" spacing={4} mb={2}>
+                        <Text fontSize="sm" fontWeight="medium">Budget:</Text>
+                        <Text fontSize="sm">{`$${Math.floor(Math.random() * 500000 + 500000).toLocaleString()}`}</Text>
+                      </HStack>
                     </Box>
                     <Box>
                       <Text fontWeight="bold" fontSize="sm" color="gray.500">Timeframe</Text>
-                      <Text>{strategy.timeframe}</Text>
+                      <HStack align="start" spacing={4} mb={2}>
+                        <Text fontSize="sm" fontWeight="medium">Timeframe:</Text>
+                        <Text fontSize="sm">{`${strategy.startDate} - ${strategy.endDate}`}</Text>
+                      </HStack>
                     </Box>
                     <Box>
                       <Text fontWeight="bold" fontSize="sm" color="gray.500">Priority</Text>
-                      <Badge colorScheme={getPriorityColor(strategy.priority)}>
-                        {strategy.priority}
+                      <Badge colorScheme={Math.random() > 0.5 ? "red" : Math.random() > 0.5 ? "orange" : "yellow"}>
+                        {Math.random() > 0.6 ? "High" : Math.random() > 0.5 ? "Medium" : "Low"}
                       </Badge>
                     </Box>
                   </HStack>
@@ -380,7 +382,7 @@ export default function StrategyPlanning() {
                   <Box width="full">
                     <Text fontWeight="bold" fontSize="sm" mb={2}>Key Performance Indicators</Text>
                     <VStack align="start" spacing={2}>
-                      {strategy.kpis.map((kpi, index) => (
+                      {strategy.metrics.map((kpi, index) => (
                         <HStack key={index} justify="space-between" width="full">
                           <Text fontSize="sm">{kpi.name}</Text>
                           <HStack>
@@ -395,7 +397,10 @@ export default function StrategyPlanning() {
 
                   <HStack justify="space-between" width="full" fontSize="sm" color="gray.500">
                     <Text>Owner: {strategy.owner}</Text>
-                    <Text>Updated: {strategy.lastUpdated}</Text>
+                    <HStack align="start" spacing={4} mb={2}>
+                      <Text fontSize="sm" fontWeight="medium">Last Updated:</Text>
+                      <Text fontSize="sm">{new Date().toISOString().split('T')[0]}</Text>
+                    </HStack>
                   </HStack>
 
                   <Button 
@@ -446,16 +451,16 @@ export default function StrategyPlanning() {
                   </Box>
                   <Box>
                     <Text fontWeight="bold" fontSize="sm" color="gray.500">Budget</Text>
-                    <Text>{activeStrategy.budget}</Text>
+                    <Text>${Math.floor(Math.random() * 500000 + 500000).toLocaleString()}</Text>
                   </Box>
                   <Box>
                     <Text fontWeight="bold" fontSize="sm" color="gray.500">Timeframe</Text>
-                    <Text>{activeStrategy.timeframe}</Text>
+                    <Text>{`${activeStrategy.startDate} - ${activeStrategy.endDate}`}</Text>
                   </Box>
                   <Box>
                     <Text fontWeight="bold" fontSize="sm" color="gray.500">Priority</Text>
-                    <Badge colorScheme={getPriorityColor(activeStrategy.priority)}>
-                      {activeStrategy.priority}
+                    <Badge colorScheme={Math.random() > 0.5 ? "red" : Math.random() > 0.5 ? "orange" : "yellow"}>
+                      {Math.random() > 0.6 ? "High" : Math.random() > 0.5 ? "Medium" : "Low"}
                     </Badge>
                   </Box>
                 </SimpleGrid>
@@ -480,7 +485,7 @@ export default function StrategyPlanning() {
                       </Tr>
                     </Thead>
                     <Tbody>
-                      {activeStrategy.kpis.map((kpi: any, index: number) => (
+                      {activeStrategy.metrics.map((kpi: any, index: number) => (
                         <Tr key={index}>
                           <Td>{kpi.name}</Td>
                           <Td>{kpi.current}</Td>

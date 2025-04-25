@@ -33,9 +33,13 @@ import {
   Th,
   Td,
   TableContainer,
+  CardHeader,
+  CardBody,
+  InputGroup,
+  InputLeftAddon,
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
-import { FiCopy, FiDownload } from 'react-icons/fi';
+import { FiCopy, FiDownload, FiCpu } from 'react-icons/fi';
 import { Card as CustomCard } from '../../../components/ui/Card';
 
 interface PlanResponse {
@@ -65,187 +69,285 @@ const sampleSavedPlans = [
 
 export default function AIDrivenPlansPage() {
   const toast = useToast();
-  const [planType, setPlanType] = useState('Awareness');
-  const [planName, setPlanName] = useState('Summer Sale Campaign');
-  const [channels, setChannels] = useState<string[]>(['Email', 'Social Media']);
-  const [goal, setGoal] = useState('Increase brand awareness');
-  const [budget, setBudget] = useState('$10,000');
-  const [duration, setDuration] = useState('30 days');
-  const [audience, setAudience] = useState('Tech-savvy millennials');
-  const [isLoading, setIsLoading] = useState(false);
-  const [plan, setPlan] = useState<PlanResponse>(samplePlan);
-  const [savedPlans, setSavedPlans] = useState<(PlanResponse & { name: string; type: string })[]>(
-    () => {
-      const stored = JSON.parse(localStorage.getItem('savedPlans') || 'null');
-      return Array.isArray(stored) && stored.length ? stored : sampleSavedPlans;
-    }
-  );
+  const [campaignType, setCampaignType] = useState('email');
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignChannels, setCampaignChannels] = useState(['email']);
+  const [campaignGoal, setCampaignGoal] = useState('');
+  const [campaignBudget, setCampaignBudget] = useState('');
+  const [campaignDuration, setCampaignDuration] = useState('');
+  const [audience, setAudience] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [savedPlans, setSavedPlans] = useState<(PlanResponse & { name: string; type: string })[]>(sampleSavedPlans);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('savedPlans', JSON.stringify(savedPlans));
-  }, [savedPlans]);
+    if (typeof window !== 'undefined') {
+      const stored = JSON.parse(localStorage.getItem('savedPlans') || 'null');
+      if (Array.isArray(stored) && stored.length) {
+        setSavedPlans(stored);
+      }
+      setIsHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && typeof window !== 'undefined') {
+      localStorage.setItem('savedPlans', JSON.stringify(savedPlans));
+    }
+  }, [savedPlans, isHydrated]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsGenerating(true);
+
+    try {
+      // In a real app, this would call an API to generate the plan
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock response with finance/banking specific content
+      const mockPlan = {
+        name: campaignName || "Financial Freedom Initiative",
+        type: campaignType,
+        channels: campaignChannels,
+        budget: campaignBudget || "$50,000",
+        duration: campaignDuration || "3 months",
+        audience: audience || "High-net-worth individuals aged 45-65",
+        goal: campaignGoal || "Increase investment advisory service adoption",
+        steps: [
+          "Segment client base by portfolio value and investment activity",
+          "Create personalized wealth management content for each segment",
+          "Deploy targeted advisor outreach to high-value prospects",
+          "Launch educational webinar series on retirement planning",
+          "Implement portfolio review follow-up sequence",
+          "Track AUM growth and new managed accounts",
+          "Analyze client acquisition cost and lifetime value metrics"
+        ]
+      };
+      
+      setGeneratedPlan(mockPlan);
+      toast({
+        title: "Plan generated successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to generate plan",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSavePlan = () => {
-    if (!plan) return;
-    const saved = JSON.parse(localStorage.getItem('savedPlans') || '[]');
-    saved.push({ name: planName, type: planType, ...plan });
-    localStorage.setItem('savedPlans', JSON.stringify(saved));
-    setSavedPlans(saved);
+    if (!generatedPlan) return;
+    setSavedPlans(prev => [...prev, { name: campaignName, type: campaignType, ...generatedPlan }]);
     toast({ title: 'Plan saved locally', status: 'success', duration: 2000, isClosable: true });
   };
 
   const handleDownload = () => {
-    if (!plan) return;
-    const dataStr = JSON.stringify({ title: plan.title, steps: plan.steps }, null, 2);
+    if (!generatedPlan) return;
+    const dataStr = JSON.stringify({ title: generatedPlan.title, steps: generatedPlan.steps }, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${planName || 'plan'}.json`;
+    a.download = `${campaignName || 'plan'}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const handleGenerate = async () => {
-    if (!planName || !planType || !channels.length || !goal || !budget || !duration || !audience) {
-      toast({ title: 'Please fill out all fields', status: 'warning', duration: 3000, isClosable: true });
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/campaigns/ai-plans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planName, channels, goal, budget, duration, audience }),
-      });
-      if (!res.ok) throw new Error('Failed to generate plan');
-      const data: PlanResponse = await res.json();
-      setPlan(data);
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message || 'Could not generate plan', status: 'error', duration: 4000, isClosable: true });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleCopyPlan = useCallback(() => {
-    if (plan) {
-      const text = [plan.title, ...plan.steps].join('\n');
+    if (generatedPlan) {
+      const text = [generatedPlan.title, ...generatedPlan.steps].join('\n');
       navigator.clipboard.writeText(text).then(() => {
         toast({ title: 'Plan copied to clipboard', status: 'success', duration: 2000, isClosable: true });
       });
     }
-  }, [plan, toast]);
+  }, [generatedPlan, toast]);
 
   return (
     <DashboardLayout>
-      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} mb={6}>
-        {/* Form Card */}
-        <CustomCard p={6}>
-          <Heading as="h1" size="lg" mb={4}>AI Driven Plans</Heading>
-          <Text mb={6}>Generate a data-driven campaign plan powered by AI based on your goals.</Text>
-          <VStack spacing={4} align="stretch" maxW="600px">
-            <FormControl isRequired>
-              <FormLabel>Campaign Type</FormLabel>
-              <Select value={planType} onChange={e => setPlanType(e.target.value)}>
-                <option>Awareness</option>
-                <option>Consideration</option>
-                <option>Conversion</option>
-              </Select>
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Campaign Name</FormLabel>
-              <Input placeholder="e.g. Summer Sale Campaign" value={planName} onChange={e => setPlanName(e.target.value)} />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Channels</FormLabel>
-              <CheckboxGroup value={channels} onChange={list => setChannels(list as string[])}>
-                <HStack spacing={4}>
-                  {['Email', 'Social Media', 'Search', 'Display'].map(c => (
-                    <Checkbox key={c} value={c}>{c}</Checkbox>
-                  ))}
-                </HStack>
-              </CheckboxGroup>
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Campaign Goal</FormLabel>
-              <Input placeholder="e.g. Increase brand awareness" value={goal} onChange={e => setGoal(e.target.value)} />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Budget</FormLabel>
-              <Input placeholder="e.g. $10,000" value={budget} onChange={e => setBudget(e.target.value)} />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Duration</FormLabel>
-              <Input placeholder="e.g. 30 days" value={duration} onChange={e => setDuration(e.target.value)} />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Target Audience</FormLabel>
-              <Input placeholder="e.g. Tech-savvy millennials" value={audience} onChange={e => setAudience(e.target.value)} />
-            </FormControl>
-            <Button colorScheme="blue" onClick={handleGenerate} isDisabled={isLoading}>
-              {isLoading ? <Spinner size="sm" /> : 'Generate Plan'}
-            </Button>
-          </VStack>
-        </CustomCard>
-        {/* Generated Plan Card */}
-        {plan && (
-          <CustomCard p={6}>
-            {/* Campaign Metadata */}
-            <Flex mb={4} align="center" justify="space-between">
-              <Heading as="h2" size="md">{plan.title}</Heading>
-            </Flex>
-            <VStack align="start" spacing={2} mb={6} divider={<StackDivider />}>
-              <Flex>
-                <Text fontWeight="bold" mr={2}>Type:</Text>
-                <Badge colorScheme="purple">{planType}</Badge>
-              </Flex>
-              <Flex>
-                <Text fontWeight="bold" mr={2}>Channels:</Text>
-                {channels.map(c => (
-                  <Badge key={c} colorScheme="blue" mr={1}>{c}</Badge>
-                ))}
-              </Flex>
-              <Flex>
-                <Text fontWeight="bold" mr={2}>Budget:</Text>
-                <Text>{budget}</Text>
-              </Flex>
-              <Flex>
-                <Text fontWeight="bold" mr={2}>Duration:</Text>
-                <Text>{duration}</Text>
-              </Flex>
-              <Flex>
-                <Text fontWeight="bold" mr={2}>Audience:</Text>
-                <Text>{audience}</Text>
-              </Flex>
-            </VStack>
-            {/* Steps */}
-            <Box mb={6}>
-              <Text fontWeight="bold" mb={2}>Plan Steps:</Text>
-              <List spacing={3}>
-                {plan.steps.map((step, idx) => (
-                  <ListItem key={idx}>
-                    <HStack align="start">
-                      <Badge colorScheme="green" borderRadius="full" boxSize={6} display="flex" alignItems="center" justifyContent="center">
-                        {idx + 1}
-                      </Badge>
-                      <Text>{step}</Text>
-                    </HStack>
-                  </ListItem>
-                ))}
-              </List>
+      <Box p={6}>
+        <HStack spacing={4} align="center" mb={6}>
+          <Icon as={FiCpu} boxSize={8} color="blue.500" />
+          <Box>
+            <Heading as="h1" size="xl" color="secondary.700">
+              AI-Driven Financial Marketing Plans
+            </Heading>
+            <Text color="gray.600">
+              Generate comprehensive financial marketing and client acquisition plans with AI
+            </Text>
+          </Box>
+        </HStack>
+
+        <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+          <CustomCard>
+            <Box p={6}>
+              <Heading size="md" mb={2}>Campaign Details</Heading>
+              <Text mb={4} color="gray.600" fontSize="sm">
+                Enter your financial campaign parameters for AI-powered planning
+              </Text>
+            
+              <VStack as="form" onSubmit={handleSubmit} spacing={6} align="start">
+                <FormControl isRequired>
+                  <FormLabel>Campaign Name</FormLabel>
+                  <Input 
+                    value={campaignName} 
+                    onChange={(e) => setCampaignName(e.target.value)} 
+                    placeholder="Wealth Management Advisory Series"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Campaign Type</FormLabel>
+                  <Select value={campaignType} onChange={(e) => setCampaignType(e.target.value)}>
+                    <option value="advisory">Wealth Advisory</option>
+                    <option value="retirement">Retirement Planning</option>
+                    <option value="investment">Investment Products</option>
+                    <option value="banking">Digital Banking</option>
+                    <option value="mortgage">Mortgage Services</option>
+                    <option value="wealth">Wealth Management</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Marketing Channels</FormLabel>
+                  <CheckboxGroup 
+                    colorScheme="blue" 
+                    value={campaignChannels} 
+                    onChange={(values) => setCampaignChannels(values as string[])}
+                  >
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                      <Checkbox value="email">Email</Checkbox>
+                      <Checkbox value="advisor">Financial Advisors</Checkbox>
+                      <Checkbox value="webinar">Webinars</Checkbox>
+                      <Checkbox value="direct">Direct Mail</Checkbox>
+                      <Checkbox value="branch">Branch Promotions</Checkbox>
+                      <Checkbox value="social">Financial Networks</Checkbox>
+                      <Checkbox value="events">Wealth Events</Checkbox>
+                    </SimpleGrid>
+                  </CheckboxGroup>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Campaign Goal</FormLabel>
+                  <Textarea 
+                    value={campaignGoal} 
+                    onChange={(e) => setCampaignGoal(e.target.value)} 
+                    placeholder="Increase assets under management and acquire high-net-worth clients"
+                  />
+                </FormControl>
+
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} width="100%">
+                  <FormControl>
+                    <FormLabel>Budget</FormLabel>
+                    <InputGroup>
+                      <InputLeftAddon>$</InputLeftAddon>
+                      <Input 
+                        value={campaignBudget} 
+                        onChange={(e) => setCampaignBudget(e.target.value)} 
+                        placeholder="75,000"
+                      />
+                    </InputGroup>
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Duration</FormLabel>
+                    <InputGroup>
+                      <Input 
+                        value={campaignDuration} 
+                        onChange={(e) => setCampaignDuration(e.target.value)} 
+                        placeholder="6 months"
+                      />
+                    </InputGroup>
+                  </FormControl>
+                </SimpleGrid>
+
+                <FormControl>
+                  <FormLabel>Target Audience</FormLabel>
+                  <Textarea 
+                    value={audience} 
+                    onChange={(e) => setAudience(e.target.value)} 
+                    placeholder="High-net-worth individuals, pre-retirees aged 50-65, business owners seeking wealth management"
+                  />
+                </FormControl>
+
+                <Button 
+                  type="submit" 
+                  colorScheme="blue" 
+                  size="lg" 
+                  width="100%" 
+                  isLoading={isGenerating}
+                  leftIcon={<Icon as={FiCpu} />}
+                >
+                  Generate Campaign Plan
+                </Button>
+              </VStack>
             </Box>
-            {/* Actions */}
-            <HStack spacing={3}>
-              <Button leftIcon={<FiCopy />} onClick={handleCopyPlan}>Copy Plan</Button>
-              <Button variant="outline" onClick={handleGenerate} isLoading={isLoading}>Regenerate</Button>
-              <Button leftIcon={<FiDownload />} onClick={handleDownload}>Download JSON</Button>
-              <Button variant="outline" onClick={handleSavePlan}>Save Plan</Button>
-            </HStack>
           </CustomCard>
-        )}
-      </SimpleGrid>
-      {/* Past AI Plans Table */}
+
+          {generatedPlan && (
+            <CustomCard>
+              <Box p={6}>
+                <Flex mb={4} align="center" justify="space-between">
+                  <Heading as="h2" size="md">{generatedPlan.title}</Heading>
+                </Flex>
+                <VStack align="start" spacing={2} mb={6} divider={<StackDivider />}>
+                  <Flex>
+                    <Text fontWeight="bold" mr={2}>Type:</Text>
+                    <Badge colorScheme="purple">{campaignType}</Badge>
+                  </Flex>
+                  <Flex>
+                    <Text fontWeight="bold" mr={2}>Channels:</Text>
+                    {campaignChannels.map(c => (
+                      <Badge key={c} colorScheme="blue" mr={1}>{c}</Badge>
+                    ))}
+                  </Flex>
+                  <Flex>
+                    <Text fontWeight="bold" mr={2}>Budget:</Text>
+                    <Text>{campaignBudget}</Text>
+                  </Flex>
+                  <Flex>
+                    <Text fontWeight="bold" mr={2}>Duration:</Text>
+                    <Text>{campaignDuration}</Text>
+                  </Flex>
+                  <Flex>
+                    <Text fontWeight="bold" mr={2}>Audience:</Text>
+                    <Text>{audience}</Text>
+                  </Flex>
+                </VStack>
+                <Box mb={6}>
+                  <Text fontWeight="bold" mb={2}>Plan Steps:</Text>
+                  <List spacing={3}>
+                    {generatedPlan.steps.map((step, idx) => (
+                      <ListItem key={idx}>
+                        <HStack align="start">
+                          <Badge colorScheme="green" borderRadius="full" boxSize={6} display="flex" alignItems="center" justifyContent="center">
+                            {idx + 1}
+                          </Badge>
+                          <Text>{step}</Text>
+                        </HStack>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+                <HStack spacing={3}>
+                  <Button leftIcon={<FiCopy />} onClick={handleCopyPlan}>Copy Plan</Button>
+                  <Button variant="outline" onClick={handleSavePlan}>Save Plan</Button>
+                  <Button leftIcon={<FiDownload />} onClick={handleDownload}>Download JSON</Button>
+                </HStack>
+              </Box>
+            </CustomCard>
+          )}
+        </SimpleGrid>
+      </Box>
       <CustomCard p={6}>
         <Heading as="h3" size="md" mb={4}>Past AI Plans</Heading>
         <TableContainer>
@@ -263,7 +365,7 @@ export default function AIDrivenPlansPage() {
                   <Td>{p.name}</Td>
                   <Td>{p.type}</Td>
                   <Td>
-                    <Button size="xs" mr={2} onClick={() => setPlan({ title: p.title, steps: p.steps })}>Load</Button>
+                    <Button size="xs" mr={2} onClick={() => setGeneratedPlan({ title: p.title, steps: p.steps })}>Load</Button>
                     <Button size="xs" colorScheme="red" onClick={() => setSavedPlans(prev => prev.filter((_, idx) => idx !== i))}>Delete</Button>
                   </Td>
                 </Tr>

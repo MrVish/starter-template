@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import {
   Box,
   BoxProps,
@@ -14,6 +14,8 @@ import {
   StyleProps,
   Badge,
   useColorModeValue,
+  Card as ChakraCard,
+  CardProps as ChakraCardProps,
 } from '@chakra-ui/react';
 import { IconType } from 'react-icons';
 import { FiExternalLink } from 'react-icons/fi';
@@ -154,25 +156,24 @@ export const Card = forwardRef<CardProps, 'div'>((props, ref) => {
     if (href) window.open(href, '_blank');
   };
 
+  // Using Chakra's Card component to provide proper context 
+  // for CardHeader and CardBody
   return (
-    <Box
+    <ChakraCard
       ref={ref}
-      __css={{
-        ...styles,
-        transition: 'all 0.2s',
-        _hover: isHoverable ? {
-          transform: 'translateY(-4px)',
-          boxShadow: 'lg',
-          ...(styles?._hover || {}),
-        } : (styles?._hover || {}),
-        boxShadow: !elevation ? 'none' : elevationStyles[elevation].boxShadow,
-        border: !elevation ? 'none' : elevationStyles[elevation].border,
-        borderColor: !elevation ? 'transparent' : elevationStyles[elevation].borderColor,
-      }}
-      {...rest}
+      variant={variant}
+      boxShadow={!elevation ? 'none' : elevationStyles[elevation].boxShadow}
+      border={!elevation ? 'none' : elevationStyles[elevation].border}
+      borderColor={!elevation ? 'transparent' : elevationStyles[elevation].borderColor}
       onClick={handleClick}
       {...glassStyles}
       {...interactiveStyles}
+      transition="all 0.2s"
+      _hover={isHoverable ? {
+        transform: 'translateY(-4px)',
+        boxShadow: 'lg',
+      } : undefined}
+      {...rest}
     >
       {image && (
         <Box
@@ -199,52 +200,54 @@ export const Card = forwardRef<CardProps, 'div'>((props, ref) => {
         </Badge>
       )}
       
-      <Flex direction="column" gap={2}>
-        {title && (
-          <Heading 
-            as="h3" 
-            size="md" 
-            color={textColor}
-            display="flex"
-            alignItems="center"
-          >
-            {title}
-            {href && (
-              <Icon 
-                as={FiExternalLink} 
-                ml={2} 
-                boxSize={4} 
-                color="blue.500" 
-              />
-            )}
-          </Heading>
-        )}
-        
-        {subtitle && (
-          <Text 
-            fontSize="sm" 
-            color={subtitleColor}
-            fontWeight="medium"
-          >
-            {subtitle}
-          </Text>
-        )}
-        
-        {description && (
-          <Text color={textColor} fontSize="md" mt={2}>
-            {description}
-          </Text>
-        )}
-        
-        {children}
-        
-        {footer && (
-          <Box mt={4} pt={4} borderTop="1px solid" borderColor={borderColor}>
-            {footer}
-          </Box>
-        )}
-      </Flex>
-    </Box>
+      {(title || subtitle || description) ? (
+        <Flex direction="column" gap={2} p={4}>
+          {title && (
+            <Heading 
+              as="h3" 
+              size="md" 
+              color={textColor}
+              display="flex"
+              alignItems="center"
+            >
+              {title}
+              {href && (
+                <Icon 
+                  as={FiExternalLink} 
+                  ml={2} 
+                  boxSize={4} 
+                  color="blue.500" 
+                />
+              )}
+            </Heading>
+          )}
+          
+          {subtitle && (
+            <Text 
+              fontSize="sm" 
+              color={subtitleColor}
+              fontWeight="medium"
+            >
+              {subtitle}
+            </Text>
+          )}
+          
+          {description && (
+            <Text color={textColor} fontSize="md" mt={2}>
+              {description}
+            </Text>
+          )}
+        </Flex>
+      ) : null}
+      
+      {children}
+      
+      {footer && (
+        <Box mt={4} pt={4} borderTop="1px solid" borderColor={borderColor}>
+          {footer}
+        </Box>
+      )}
+    </ChakraCard>
   );
 });
 

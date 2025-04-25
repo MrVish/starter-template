@@ -60,6 +60,8 @@ import {
   FiShoppingBag,
   FiClock,
   FiMoreVertical,
+  FiLayers,
+  FiActivity,
 } from 'react-icons/fi';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 
@@ -67,47 +69,43 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 const CUSTOMER_SEGMENTS = [
   {
     id: 1,
-    name: 'High-Value Banking',
-    description: 'Customers with high account balances and frequent transactions',
-    size: 15000,
-    criteria: 'Balance > $100,000 OR Monthly Transactions > 50',
+    name: 'Premium Banking Clients',
+    description: 'Clients with balances over $250K and active investment accounts',
+    size: 23451,
     engagement: 'High',
-    lastUpdated: '2024-03-15',
-    growth: '+12%',
-    avgValue: '$250,000',
+    growth: '+12.5%',
+    avgValue: '$4,850',
+    lastUpdated: '2023-02-15',
   },
   {
     id: 2,
-    name: 'Digital Natives',
-    description: 'Tech-savvy customers who primarily use digital banking',
-    size: 45000,
-    criteria: 'Digital Transactions > 80% AND Age < 35',
+    name: 'Digital Banking Power Users',
+    description: 'Clients who conduct 90%+ of transactions via mobile/web platforms',
+    size: 78932,
     engagement: 'Medium',
-    lastUpdated: '2024-03-14',
-    growth: '+28%',
-    avgValue: '$35,000',
+    growth: '+8.3%',
+    avgValue: '$780',
+    lastUpdated: '2023-03-01',
   },
   {
     id: 3,
-    name: 'Investment Focus',
-    description: 'Customers with significant investment portfolio',
-    size: 8000,
-    criteria: 'Investment Portfolio > $50,000',
-    engagement: 'High',
-    lastUpdated: '2024-03-15',
-    growth: '+8%',
-    avgValue: '$175,000',
+    name: 'Wealth Management Portfolio',
+    description: 'High-net-worth clients with managed investment portfolios > $1M',
+    size: 4578,
+    engagement: 'Very High',
+    growth: '+5.7%',
+    avgValue: '$15,750',
+    lastUpdated: '2023-02-28',
   },
   {
     id: 4,
-    name: 'New Account Holders',
-    description: 'Customers who opened accounts in the last 6 months',
-    size: 12000,
-    criteria: 'Account Age < 180 days',
+    name: 'New Client Onboarding',
+    description: 'Clients who opened accounts or started investment relationships in the last 6 months',
+    size: 15243,
     engagement: 'Low',
-    lastUpdated: '2024-03-15',
-    growth: '+45%',
-    avgValue: '$15,000',
+    growth: '+28.9%',
+    avgValue: '$625',
+    lastUpdated: '2023-03-05',
   },
 ];
 
@@ -121,25 +119,25 @@ export default function CustomerSegments() {
     {
       title: 'Total Segments',
       value: CUSTOMER_SEGMENTS.length,
-      icon: FiUsers,
+      icon: FiLayers,
       color: 'blue',
     },
     {
       title: 'Total Customers',
       value: CUSTOMER_SEGMENTS.reduce((sum, segment) => sum + segment.size, 0).toLocaleString(),
-      icon: FiBarChart2,
+      icon: FiUsers,
       color: 'green',
     },
     {
-      title: 'Avg. Customer Value',
-      value: '$118,750',
+      title: 'Avg. Client Value',
+      value: '$975',
       icon: FiDollarSign,
       color: 'purple',
     },
     {
-      title: 'Active Campaigns',
+      title: 'Active Client Programs',
       value: '8',
-      icon: FiShoppingBag,
+      icon: FiActivity,
       color: 'orange',
     },
   ];
@@ -170,10 +168,10 @@ export default function CustomerSegments() {
           <Icon as={FiUsers} boxSize={8} color="blue.500" />
           <Box>
             <Heading as="h1" size="xl" color="secondary.700">
-              Customer Segments
+              Client Segments
             </Heading>
             <Text color="gray.600">
-              Define and manage customer segments for targeted marketing
+              Define and manage client segments for targeted financial marketing
             </Text>
           </Box>
         </HStack>
@@ -304,7 +302,7 @@ export default function CustomerSegments() {
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Create Customer Segment</ModalHeader>
+          <ModalHeader>Create Client Segment</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing={4}>
@@ -312,18 +310,18 @@ export default function CustomerSegments() {
                 <FormLabel>Segment Name</FormLabel>
                 <Input placeholder="Enter segment name" />
               </FormControl>
-              <FormControl isRequired>
+              <FormControl>
                 <FormLabel>Description</FormLabel>
                 <Input placeholder="Enter segment description" />
               </FormControl>
-              <FormControl isRequired>
+              <FormControl>
                 <FormLabel>Segment Criteria</FormLabel>
-                <Select placeholder="Select primary criteria">
-                  <option value="balance">Account Balance</option>
-                  <option value="transactions">Transaction Volume</option>
-                  <option value="age">Customer Age</option>
-                  <option value="products">Number of Products</option>
-                  <option value="digital">Digital Usage</option>
+                <Select>
+                  <option value="balances">Account Balances</option>
+                  <option value="products">Financial Products</option>
+                  <option value="activity">Transaction Activity</option>
+                  <option value="investmentProfile">Investment Profile</option>
+                  <option value="wealthTier">Wealth Tier</option>
                 </Select>
               </FormControl>
               <FormControl>
