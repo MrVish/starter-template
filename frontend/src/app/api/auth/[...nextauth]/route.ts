@@ -16,6 +16,8 @@ declare module "next-auth" {
       name?: string;
       email?: string;
       image?: string;
+      role?: string;
+      roles?: string[];
     }
   }
   
@@ -25,6 +27,8 @@ declare module "next-auth" {
     email: string;
     accessToken?: string;
     refreshToken?: string;
+    role?: string;
+    roles?: string[];
   }
 }
 
@@ -40,6 +44,8 @@ declare module "next-auth/jwt" {
     iat?: number;
     nbf?: number;
     exp?: number;
+    role?: string;
+    roles?: string[];
   }
 }
 
@@ -61,12 +67,15 @@ const handler = NextAuth({
           });
 
           if (response.data && response.data.user) {
+            console.log('Login response:', JSON.stringify(response.data));
             return {
               id: response.data.user.id.toString(),
               name: response.data.user.username,
               email: response.data.user.email,
               accessToken: response.data.access_token,
               refreshToken: response.data.refresh_token,
+              role: response.data.user.role || 'user',
+              roles: response.data.user.roles || [],
             };
           }
 
@@ -101,6 +110,8 @@ const handler = NextAuth({
         token.id = user.id;
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
+        token.role = user.role;
+        token.roles = user.roles;
         token.sub = user.id;
         token.type = 'access';
         token.jti = crypto.randomUUID();
@@ -115,6 +126,8 @@ const handler = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.roles = token.roles;
         session.accessToken = token.accessToken;
         session.token = token.accessToken;
       }

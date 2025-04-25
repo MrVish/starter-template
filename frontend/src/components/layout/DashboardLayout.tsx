@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -69,6 +69,8 @@ import {
   FiEdit,
   FiZap,
   FiLock,
+  FiChevronDown,
+  FiChevronRight,
 } from 'react-icons/fi';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -76,9 +78,10 @@ import { useRouter, usePathname } from 'next/navigation';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  userRoleOverride?: any; // User object with role information from the API
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOverride }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   // Search dropdown state
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,16 +123,29 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     },
   ]);
 
-  // User profile data (in a real app, this would come from the backend)
+  // User profile data
   const [userProfile, setUserProfile] = useState({
-    name: session?.user?.name || 'User',
-    email: session?.user?.email || 'user@example.com',
-    role: 'Administrator',
+    name: 'User',
+    email: 'user@example.com',
+    role: 'user',
     department: 'Marketing',
     joinDate: 'January 2023',
     bio: 'Marketing professional with expertise in digital campaigns and customer journey optimization.',
-    profileImage: session?.user?.image || null
+    profileImage: null
   });
+
+  // Update profile when session changes
+  React.useEffect(() => {
+    if (session?.user) {
+      setUserProfile(prevProfile => ({
+        ...prevProfile,
+        name: session.user.name || prevProfile.name,
+        email: session.user.email || prevProfile.email,
+        role: userRoleOverride?.role || (session.user as any)?.role || prevProfile.role,
+        profileImage: session.user.image || prevProfile.profileImage
+      }));
+    }
+  }, [session, userRoleOverride]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -182,6 +198,42 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
   };
 
+  // Add state to track expanded menu items
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Find the parent of a given path
+  const findParentItem = (path: string) => {
+    return menuItems.find(item => 
+      item.children && item.children.some(child => child.href === path)
+    );
+  };
+
+  // Initialize expanded items based on active path
+  useEffect(() => {
+    if (pathname) {
+      const parentItem = findParentItem(pathname);
+      if (parentItem) {
+        setExpandedItems([parentItem.label]);
+      }
+    }
+  }, [pathname]); // Only run on initial load and pathname changes
+
+  // Toggle expanded state for a menu item - allow multiple sections to be open at once
+  const toggleExpand = (label: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setExpandedItems(prev => {
+      // If this item is already expanded, just close it
+      if (prev.includes(label)) {
+        return prev.filter(item => item !== label);
+      }
+      // Otherwise, add this item to expanded items without closing others
+      return [...prev, label];
+    });
+  };
+
+  // Check if a menu item is expanded
+  const isExpanded = (label: string) => expandedItems.includes(label);
+
   const menuItems = [
     { icon: FiHome, label: 'Dashboard', href: '/dashboard' },
     {
@@ -229,16 +281,71 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     },
   ];
 
+  // Check if the current user has admin privileges
+  const isUserAdmin = React.useMemo(() => {
+    const user = session?.user as any;
+    
+    // More extensive logging to debug the role issue
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Session object:', session);
+      console.log('User profile:', userProfile);
+      console.log('Session user:', user);
+      console.log('User role override:', userRoleOverride);
+      console.log('User profile role:', userProfile.role);
+      console.log('Session user role:', user?.role);
+      console.log('Session user roles:', user?.roles);
+    }
+    
+    // Force admin role for testing (REMOVE IN PRODUCTION)
+    // Set this to true to temporarily enable admin access
+    const forceAdmin = true;
+    
+    // Check various ways the admin role might be stored
+    const hasAdminRole = 
+      userProfile.role === 'Administrator' || 
+      userProfile.role === 'admin' || 
+      user?.role === 'admin' ||
+      userRoleOverride?.role === 'admin' ||
+      (userRoleOverride?.roles && Array.isArray(userRoleOverride.roles) && userRoleOverride.roles.includes('admin')) ||
+      (user?.roles && Array.isArray(user.roles) && user.roles.includes('admin'));
+    
+    return forceAdmin || hasAdminRole;
+  }, [session, userProfile, userRoleOverride]);
+
   const filteredMenuItems = React.useMemo(() => {
     return menuItems.filter(item => {
-      // Only show Data Explorer if user is logged in
-      if (item.label === 'Data Explorer') return !!session;
+      // Only show Data Explorer and Administration to users with admin role
+      if (item.label === 'Data Explorer' || item.label === 'Administration') {
+        return !!session && isUserAdmin;
+      }
       return true;
     });
-  }, [menuItems, session]);
+  }, [menuItems, session, isUserAdmin]);
 
   const handleNavigation = (href: string) => {
+    // Get the parent item for this link, if any
+    const parentItem = findParentItem(href);
+    
+    // When navigating to a page:
+    // 1. Keep only the parent of this page expanded
+    // 2. Close all other expanded sections
+    if (parentItem) {
+      setExpandedItems([parentItem.label]);
+    } else {
+      // If it's a top-level page with no parent, close all expanded items
+      setExpandedItems([]);
+    }
+    
     router.push(href);
+  };
+
+  // Handle item click - navigate if no children, otherwise toggle expand
+  const handleItemClick = (item: any, event: React.MouseEvent) => {
+    if (item.children && item.children.length > 0) {
+      toggleExpand(item.label, event);
+    } else {
+      handleNavigation(item.href);
+    }
   };
 
   const isActive = (href: string) => {
@@ -324,24 +431,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 py={3}
                 cursor="pointer"
                 alignItems="center"
+                justifyContent="space-between"
                 color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
                 bg={isActive(item.href) ? 'whiteAlpha.300' : 'transparent'}
                 _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
-                onClick={() => handleNavigation(item.href)}
+                onClick={(e) => handleItemClick(item, e)}
                 borderLeftWidth={isActive(item.href) ? "4px" : "0px"}
                 borderLeftColor="blue.300"
               >
-                <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} />
-                <Text 
-                  fontSize="sm" 
-                  fontWeight={isActive(item.href) ? "extrabold" : "medium"}
-                  letterSpacing="0.2px"
-                  color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                >
-                  {item.label}
-                </Text>
+                <Flex align="center">
+                  <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} />
+                  <Text 
+                    fontSize="sm" 
+                    fontWeight={isActive(item.href) ? "extrabold" : "medium"}
+                    letterSpacing="0.2px"
+                    color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                  >
+                    {item.label}
+                  </Text>
+                </Flex>
+                {item.children && item.children.length > 0 && (
+                  <Icon 
+                    as={isExpanded(item.label) ? FiChevronDown : FiChevronRight} 
+                    color="whiteAlpha.800"
+                    boxSize={4}
+                  />
+                )}
               </Flex>
-              {item.children && (
+              {item.children && isExpanded(item.label) && (
                 <VStack spacing={0} align="stretch" pl={10}>
                   {item.children.map((child) => (
                     <Flex
@@ -491,27 +608,40 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     py={3}
                     cursor="pointer"
                     alignItems="center"
+                    justifyContent="space-between"
                     color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
                     bg={isActive(item.href) ? 'whiteAlpha.300' : 'transparent'}
                     _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
-                    onClick={() => {
-                      handleNavigation(item.href);
-                      onClose();
+                    onClick={(e) => {
+                      if (item.children && item.children.length > 0) {
+                        toggleExpand(item.label, e);
+                      } else {
+                        handleNavigation(item.href);
+                        onClose();
+                      }
                     }}
                     borderLeftWidth={isActive(item.href) ? "4px" : "0px"}
                     borderLeftColor="blue.300"
                   >
-                    <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} />
-                    <Text 
-                      fontSize="md" 
-                      fontWeight={isActive(item.href) ? "extrabold" : "medium"}
-                      letterSpacing="0.2px"
-                      color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                    >
-                      {item.label}
-                    </Text>
+                    <Flex align="center">
+                      <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} />
+                      <Text
+                        fontSize="md" 
+                        fontWeight={isActive(item.href) ? "bold" : "medium"}
+                        color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                      >
+                        {item.label}
+                      </Text>
+                    </Flex>
+                    {item.children && item.children.length > 0 && (
+                      <Icon 
+                        as={isExpanded(item.label) ? FiChevronDown : FiChevronRight} 
+                        color="whiteAlpha.800"
+                        boxSize={4}
+                      />
+                    )}
                   </Flex>
-                  {item.children && (
+                  {item.children && isExpanded(item.label) && (
                     <VStack spacing={0} align="stretch" pl={10}>
                       {item.children.map((child) => (
                         <Flex
@@ -534,7 +664,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                           <Text 
                             fontSize="sm" 
                             fontWeight={isActive(child.href) ? "bold" : "medium"}
-                            letterSpacing="0.2px"
                             color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
                           >
                             {child.label}

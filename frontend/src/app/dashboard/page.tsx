@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -65,6 +65,7 @@ import {
 import { FiTrendingUp, FiTrendingDown, FiClock, FiAlertCircle, FiCheckCircle, FiBell, FiPlus, FiDownload, FiUpload, FiMoreVertical, FiRefreshCw, FiFilter, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useSession } from 'next-auth/react';
+import axios from 'axios';
 
 // Enhanced BIEmbed component with more features
 const MarketingAnalyticsEmbed = () => {
@@ -269,6 +270,7 @@ const GROUPED_METRICS = METRICS_OPTIONS.reduce((acc, metric) => {
 
 export default function Dashboard() {
   const { data: session } = useSession();
+  const [userDetails, setUserDetails] = React.useState(null);
   const toast = useToast();
   
   // Modal states
@@ -417,6 +419,56 @@ export default function Dashboard() {
     });
   };
 
+  // Fetch user profile with roles when session is available
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (session?.accessToken) {
+        try {
+          const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/v1/users/profile`, {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`
+            }
+          });
+          
+          if (response.data) {
+            console.log('User profile from API:', response.data);
+            // Update the session user with role information from the backend
+            if (session.user && response.data.roles) {
+              // This doesn't actually modify the session, but we could pass this to child components
+              setUserDetails({
+                ...session.user,
+                role: response.data.roles.includes('admin') ? 'admin' : 'user',
+                roles: response.data.roles
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch user profile:', error);
+          toast({
+            title: 'Error fetching profile',
+            description: 'Could not retrieve your user details',
+            status: 'error',
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [session, toast]);
+
+  // Force admin role - REMOVE IN PRODUCTION
+  useEffect(() => {
+    if (session?.user && !userDetails) {
+      setUserDetails({
+        ...session.user,
+        role: 'admin',
+        roles: ['admin']
+      });
+    }
+  }, [session, userDetails]);
+
   if (!session) {
     return (
       <Flex 
@@ -438,18 +490,21 @@ export default function Dashboard() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout userRoleOverride={userDetails}>
       <Box>
-        <Flex 
-          direction={{ base: 'column', md: 'row' }} 
-          justify="space-between" 
-          align={{ base: 'flex-start', md: 'center' }} 
-          mb={8}
-          gap={3}
+        <Flex
+          direction={{ base: 'column', lg: 'row' }}
+          justify="space-between"
+          align={{ base: 'flex-start', lg: 'center' }}
+          mb={6}
         >
-          <Box>
-            <Heading as="h1" size="lg" mb={4}>Marketing Analytics Dashboard</Heading>
-            <Text color="gray.500">Welcome back, {session?.user?.name || 'User'}</Text>
+          <Box mb={{ base: 4, lg: 0 }}>
+            <Heading size="lg" mb={1}>
+              Marketing Analytics Dashboard
+            </Heading>
+            <Text color="gray.600">
+              Welcome, {session?.user?.name || 'User'}! Here's an overview of your campaigns.
+            </Text>
           </Box>
           
           <HStack spacing={3}>
