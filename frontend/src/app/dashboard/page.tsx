@@ -660,7 +660,7 @@ export default function Dashboard() {
                     <Text fontWeight="medium">Social Media</Text>
                     <Text fontWeight="bold">42%</Text>
                   </Flex>
-                  <Progress value={42} colorScheme="facebook" size="sm" mt={2} />
+                  <Progress value={42} colorScheme="orange" size="sm" mt={2} />
                 </Box>
                 
                 <Box>

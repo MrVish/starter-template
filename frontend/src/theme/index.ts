@@ -650,12 +650,12 @@ const components = {
           fontWeight: 500,
           color: 'gray.600',
           _selected: {
-            color: 'accent.600',
+            color: 'primary.700',
             fontWeight: 600,
-            borderColor: 'accent.500',
+            borderColor: 'primary.500',
           },
           _hover: {
-            color: 'accent.500',
+            color: 'primary.500',
             bg: 'gray.50',
           },
         },
@@ -665,12 +665,12 @@ const components = {
           fontWeight: 500,
           color: 'gray.600',
           _selected: {
-            color: 'accent.600',
+            color: 'primary.700',
             fontWeight: 600,
-            borderColor: 'accent.500',
+            borderColor: 'primary.500',
           },
           _hover: {
-            color: 'accent.500',
+            color: 'primary.500',
           },
         },
       },

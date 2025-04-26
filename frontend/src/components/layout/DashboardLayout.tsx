@@ -86,6 +86,17 @@ interface DashboardLayoutProps {
   userRoleOverride?: any; // User object with role information from the API
 }
 
+// Define proper type for user profile
+interface UserProfile {
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  joinDate: string;
+  bio: string;
+  profileImage: string | null;
+}
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOverride }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   // Search dropdown state
@@ -129,7 +140,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
   ]);
 
   // User profile data
-  const [userProfile, setUserProfile] = useState({
+  const [userProfile, setUserProfile] = useState<UserProfile>({
     name: 'User',
     email: 'user@example.com',
     role: 'user',
@@ -225,15 +236,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
 
   // Toggle expanded state for a menu item - allow multiple sections to be open at once
   const toggleExpand = (label: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setExpandedItems(prev => {
-      // If this item is already expanded, just close it
-      if (prev.includes(label)) {
-        return prev.filter(item => item !== label);
-      }
-      // Otherwise, add this item to expanded items without closing others
-      return [...prev, label];
-    });
+    event.preventDefault();
+    if (expandedItems.includes(label)) {
+      setExpandedItems(expandedItems.filter(item => item !== label));
+    } else {
+      setExpandedItems([...expandedItems, label]);
+    }
   };
 
   // Check if a menu item is expanded
@@ -394,7 +402,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
 
   return (
     <Flex h="100vh">
-      {/* Sidebar */}
+      {/* Sidebar - with glassmorphic styling */}
       <Box
         display={{ base: 'none', md: 'flex' }}
         flexDirection="column"
@@ -404,8 +412,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         overflowY="auto"
         zIndex={20}
         className="sidebar-container"
-        bg="secondary.500"
-        boxShadow="lg"
+        bg="rgba(46, 54, 67, 0.85)"
+        backdropFilter="blur(16px)"
+        boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
+        borderRight="1px solid rgba(255, 255, 255, 0.1)"
         sx={{
           '&::-webkit-scrollbar': {
             width: '8px',
@@ -452,7 +462,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                   color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
                   bg={isActive(item.href) ? 'brand.500' : 'transparent'}
                   _hover={{ bg: 'primary.500', color: 'white' }}
-                  onClick={(e) => toggleExpand(item.label, e)}
+                  onClick={(e) => {
+                    if (item.children && Array.isArray(item.children) && item.children.length > 0) {
+                      toggleExpand(item.label, e);
+                    } else {
+                      handleNavigation(item.href);
+                    }
+                  }}
                   borderLeftWidth="4px"
                   borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
                   minH="48px"
@@ -470,7 +486,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                       {item.label}
                     </Text>
                   </Flex>
-                  {item.children && item.children.length > 0 && (
+                  {item.children && Array.isArray(item.children) && item.children.length > 0 && (
                     <Icon
                       as={FiChevronRight}
                       color="whiteAlpha.800"
@@ -571,7 +587,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
       >
         <DrawerOverlay />
         <DrawerContent
-          bg="secondary.500"
+          bg="rgba(46, 54, 67, 0.85)"
+          backdropFilter="blur(16px)"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
           sx={{
             '&::-webkit-scrollbar': {
               width: '8px',
@@ -662,7 +680,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                     bg={isActive(item.href) ? 'brand.500' : 'transparent'}
                     _hover={{ bg: 'primary.500', color: 'white' }}
                     onClick={(e) => {
-                      if (item.children && item.children.length > 0) {
+                      if (item.children && Array.isArray(item.children) && item.children.length > 0) {
                         toggleExpand(item.label, e);
                       } else {
                         handleNavigation(item.href);
@@ -685,7 +703,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                         {item.label}
                       </Text>
                     </Flex>
-                    {item.children && item.children.length > 0 && (
+                    {item.children && Array.isArray(item.children) && item.children.length > 0 && (
                       <Icon
                         as={FiChevronRight}
                         color="whiteAlpha.800"
@@ -747,7 +765,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         </DrawerContent>
       </Drawer>
 
-      {/* Main Content */}
       <Box
         ml={{ base: 0, md: 72 }}
         flex={1}
@@ -758,16 +775,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         flexDirection="column"
         overflow="hidden"
       >
-        {/* Header */}
+        {/* Header - with glassmorphic styling */}
         <Box
           position="sticky"
           top={0}
           zIndex={10}
-          bg="secondary.500"
-          backdropFilter="blur(20px)"
+          bg="rgba(46, 54, 67, 0.85)"
+          backdropFilter="blur(16px)"
           borderBottomWidth="1px"
           borderColor="rgba(255, 255, 255, 0.15)"
-          boxShadow="0 8px 20px rgba(0, 0, 0, 0.1)"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
         >
           <Flex
             justify="space-between"
