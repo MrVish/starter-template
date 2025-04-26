@@ -1,0 +1,106 @@
+Table,Column,Type,Description
+stg_customer_profile,customer_id,VARCHAR(50),Bank customer unique ID
+stg_customer_profile,full_name,VARCHAR(255),Customer full name
+stg_customer_profile,email,VARCHAR(255),Email address
+stg_customer_profile,mobile,VARCHAR(20),Mobile number
+stg_customer_profile,dob,DATE,Date of birth
+stg_customer_profile,gender,VARCHAR(10),Gender
+stg_customer_profile,income_bracket,VARCHAR(50),Income range
+stg_customer_profile,marital_status,VARCHAR(20),Single / Married / Other
+stg_customer_profile,occupation,VARCHAR(100),Profession type
+stg_customer_profile,location,VARCHAR(100),City or Region
+stg_customer_profile,risk_profile,VARCHAR(50),Conservative / Balanced / Aggressive
+stg_customer_profile,joined_date,DATE,Date when the customer joined
+stg_customer_profile,segment_tag,VARCHAR(50),"Initial tag (e.g. HNI, Mass Market)"
+stg_customer_channel_activity,activity_id,BIGINT PK,Unique record
+stg_customer_channel_activity,customer_id,VARCHAR(50),FK ? stg_customer_profile.customer_id
+stg_customer_channel_activity,campaign_id,VARCHAR(50),FK ? dim_campaigns.external_id
+stg_customer_channel_activity,channel,VARCHAR(50),"Email, SMS, In-App, Web"
+stg_customer_channel_activity,event_type,VARCHAR(50),Impressed / Clicked / Opened / Bounced
+stg_customer_channel_activity,event_time,DATETIME,Timestamp of the event
+stg_customer_channel_activity,device_type,VARCHAR(50),Mobile / Desktop
+stg_customer_channel_activity,browser,VARCHAR(100),Optional
+stg_transactions,txn_id,VARCHAR(50),Transaction ID
+stg_transactions,customer_id,VARCHAR(50),FK ? stg_customer_profile.customer_id
+stg_transactions,product,VARCHAR(100),Credit Card / Home Loan / Deposit
+stg_transactions,txn_amount,"DECIMAL(12,2)",Amount transacted
+stg_transactions,txn_type,VARCHAR(50),Credit / Debit / EMI / Payment
+stg_transactions,txn_date,DATE,Date of transaction
+stg_transactions,location,VARCHAR(100),Transaction location (optional)
+stg_product_ownership,customer_id,VARCHAR(50),FK ? stg_customer_profile.customer_id
+stg_product_ownership,product_code,VARCHAR(50),"e.g. CC_PLATINUM, SAVINGS_ACCOUNT"
+stg_product_ownership,active,BOOLEAN,True if product is still active
+stg_product_ownership,opened_date,DATE,Date opened
+stg_product_ownership,closed_date,DATE,Nullable
+stg_feedback_scores,id,BIGINT PK,Feedback record ID
+stg_feedback_scores,customer_id,VARCHAR(50),FK ? stg_customer_profile.customer_id
+stg_feedback_scores,campaign_id,VARCHAR(50),FK ? dim_campaigns.external_id
+stg_feedback_scores,rating,TINYINT,Score from 1-5
+stg_feedback_scores,comments,TEXT,Optional free-text feedback
+stg_feedback_scores,submitted_at,DATETIME,Timestamp of feedback
+stg_contact_constraints,customer_id,VARCHAR(50),FK?stg_customer_profile.customer_id
+stg_contact_constraints,do_not_email,BOOLEAN,Opt-out from emails
+stg_contact_constraints,do_not_sms,BOOLEAN,Opt-out from SMS
+stg_contact_constraints,preferred_contact_time,VARCHAR(50),"Preferred contact time (e.g., '9AM - 11AM')"
+stg_customer_features,customer_id,VARCHAR(50) PK,FK? stg_customer_profile.customer_id
+stg_customer_features,churn_risk_score,"DECIMAL(5,2)",Predicted risk of churn (0-1 scale)
+stg_customer_features,lifetime_value_score,"DECIMAL(10,2)",Estimated customer value
+stg_customer_features,propensity_score,"DECIMAL(5,2)",Likelihood to convert/respond (0-1 scale)
+stg_customer_features,model_version,VARCHAR(50),Version of AI model used
+fact_campaign_performance,date_key,INT FK → dim_dates.date_key,Date
+fact_campaign_performance,impressions,BIGINT,Number of impressions
+fact_campaign_performance,clicks,BIGINT,Number of clicks
+fact_campaign_performance,conversions,BIGINT,Number of conversions
+fact_campaign_performance,spend,"DECIMAL(12,2)",Cost of campaign
+fact_channel_performance,campaign_id,BIGINT FK,Campaign ID
+fact_channel_performance,channel_id,BIGINT FK,Channel ID
+fact_channel_performance,impressions,BIGINT,Channel impressions
+fact_segment_performance,segment_id,BIGINT FK,Segment ID
+fact_segment_performance,date_key,INT FK,Date key
+fact_segment_performance,engagement_score,"DECIMAL(5,2)",Engagement metric
+fact_campaign_kpi_results,campaign_id,BIGINT FK,Campaign ID
+fact_campaign_kpi_results,kpi_id,BIGINT FK,KPI ID
+fact_campaign_kpi_results,value,"DECIMAL(10,2)",KPI outcome
+fact_data_ingestion_runs,id,BIGINT PK,Ingestion run ID
+fact_data_ingestion_runs,source_id,BIGINT FK,Source system
+fact_data_ingestion_runs,status,VARCHAR(20),"Success, Failure"
+fact_data_ingestion_runs,row_count,INT,Rows loaded
+fact_data_ingestion_runs,run_time,DATETIME,Run timestamp
+fact_user_actions,id,BIGINT PK,Action log ID
+fact_user_actions,user_id,BIGINT FK,User performing action
+fact_user_actions,action_type,VARCHAR(100),"What action (e.g., edit_campaign)"
+fact_user_actions,timestamp,DATETIME,When it occurred
+fact_feedback,id,BIGINT PK,Unique feedback ID
+fact_feedback,customer_id,VARCHAR(50) FK → dim_customers.customer_id,Customer reference
+fact_feedback,campaign_id,BIGINT FK → dim_campaigns.id,Campaign reference
+fact_feedback,rating,TINYINT,Rating score
+fact_feedback,comments,TEXT,Optional feedback
+fact_feedback,submitted_at,DATETIME,Timestamp of feedback
+dim_contact_preferences,customer_id,VARCHAR(50) PK,Customer ID
+dim_contact_preferences,do_not_email,BOOLEAN,Email opt-out
+dim_contact_preferences,do_not_sms,BOOLEAN,SMS opt-out
+dim_contact_preferences,preferred_contact_time,VARCHAR(50),Preferred time window
+dim_customer_ai_features,customer_id,VARCHAR(50) PK,Customer ID
+dim_customer_ai_features,churn_risk_score,"DECIMAL(5,2)",Churn probability
+dim_customer_ai_features,lifetime_value_score,"DECIMAL(10,2)",Predicted LTV
+dim_customer_ai_features,propensity_score,"DECIMAL(5,2)",Likelihood to respond
+dim_customer_ai_features,model_version,VARCHAR(50),Version of AI model used
+dim_customer_ai_features,scored_at,DATETIME,Scoring timestamp
+dim_customers,customer_id,VARCHAR(50),Primary Key
+dim_customers,full_name,VARCHAR(255),Cleaned and unified name
+dim_customers,dob,DATE,
+dim_customers,gender,VARCHAR(10),
+dim_customers,income_bracket,VARCHAR(50),
+dim_customers,risk_profile,VARCHAR(50),
+dim_customers,joined_date,DATE,
+dim_customers,latest_segment_id,BIGINT FK,Points to dim_segments
+dim_customers,location,VARCHAR(100),City/Region
+dim_customers,active_product_count,INT,Aggregated from fact
+fact_transactions,txn_id,VARCHAR(50),PK
+fact_transactions,customer_id,VARCHAR(50) FK ? dim_customers.customer_id,
+fact_transactions,txn_date,DATE,
+fact_transactions,product_code,VARCHAR(50),"CC, FD, Loan"
+fact_transactions,txn_amount,"DECIMAL(12,2)",
+fact_transactions,txn_type,VARCHAR(50),Debit/Credit
+fact_transactions,campaign_id,BIGINT FK (optional),To link with campaign
+fact_transactions,channel_id,BIGINT FK (optional),Where txn was triggered

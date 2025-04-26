@@ -13,22 +13,23 @@ from werkzeug.security import generate_password_hash
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from cli_app import app
-from models.user import User, Role
+from models.dim_users import DimUser
+from models.dim_roles import DimRole
 from extensions import db
 
 def create_test_users(num_users=20, output_file=None):
     """Create test users for development"""
     with app.app_context():
         # Check if we already have many users
-        existing_count = User.query.count()
+        existing_count = DimUser.query.count()
         if existing_count > 10:
             print(f"Database already has {existing_count} users. Skipping test user creation.")
             return
             
         # Get roles
-        admin_role = Role.query.filter_by(name='admin').first()
-        analyst_role = Role.query.filter_by(name='analyst').first()
-        user_role = Role.query.filter_by(name='user').first()
+        admin_role = DimRole.query.filter_by(name='admin').first()
+        analyst_role = DimRole.query.filter_by(name='analyst').first()
+        user_role = DimRole.query.filter_by(name='user').first()
         
         if not admin_role or not analyst_role or not user_role:
             print("Required roles not found. Please run init_db.py first.")
@@ -60,7 +61,7 @@ def create_test_users(num_users=20, output_file=None):
             email = f"{username}@example.com"
             
             # Check if username or email already exists
-            if User.query.filter((User.username == username) | (User.email == email)).first():
+            if DimUser.query.filter((DimUser.username == username) | (DimUser.email == email)).first():
                 continue
                 
             # Create user
@@ -77,7 +78,7 @@ def create_test_users(num_users=20, output_file=None):
             }
             
             # Create in database
-            db_user = User(
+            db_user = DimUser(
                 username=user['username'],
                 email=user['email'],
                 password_hash=user['password_hash'],

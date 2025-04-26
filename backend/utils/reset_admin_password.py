@@ -1,4 +1,4 @@
-from models.user import User
+from models.dim_users import DimUser
 from werkzeug.security import generate_password_hash
 from cli_app import app
 
@@ -6,7 +6,7 @@ def reset_admin_password(new_password='admin123'):
     """Reset the admin user's password"""
     with app.app_context():
         # Find admin user
-        admin = User.query.filter_by(username='admin').first()
+        admin = DimUser.query.filter_by(username='admin').first()
         if not admin:
             print("Admin user not found!")
             return

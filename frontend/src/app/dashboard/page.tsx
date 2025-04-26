@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Flex,
@@ -176,9 +176,18 @@ const GROUPED_METRICS = METRICS_OPTIONS.reduce((acc, metric) => {
   return acc;
 }, {});
 
+// Define a type for user details
+interface UserDetails {
+  name?: string;
+  email?: string;
+  role?: string;
+  roles?: string[];
+  image?: string;
+}
+
 export default function Dashboard() {
   const { data: session } = useSession();
-  const [userDetails, setUserDetails] = React.useState(null);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const toast = useToast();
   
   // Modal states
@@ -332,30 +341,48 @@ export default function Dashboard() {
     const fetchUserProfile = async () => {
       if (session?.accessToken) {
         try {
-          const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/v1/users/profile`, {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`
+          console.log('Fetching user profile...');
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/v1/users/profile`, 
+            {
+              headers: {
+                Authorization: `Bearer ${session.accessToken}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              withCredentials: true
             }
-          });
+          );
           
           if (response.data) {
             console.log('User profile from API:', response.data);
             // Update the session user with role information from the backend
-            if (session.user && response.data.roles) {
-              // This doesn't actually modify the session, but we could pass this to child components
+            if (session.user) {
+              const roles = response.data.roles || ['user'];
               setUserDetails({
                 ...session.user,
-                role: response.data.roles.includes('admin') ? 'admin' : 'user',
-                roles: response.data.roles
+                role: roles.includes('admin') ? 'admin' : 'user',
+                roles: roles
               });
+              
+              console.log('User details updated with roles:', roles);
             }
           }
         } catch (error) {
           console.error('Failed to fetch user profile:', error);
+          
+          // For development - set user as admin even if profile fetch fails
+          // Remove this in production
+          setUserDetails({
+            ...session.user,
+            role: 'admin',
+            roles: ['admin']
+          });
+          
           toast({
             title: 'Error fetching profile',
-            description: 'Could not retrieve your user details',
-            status: 'error',
+            description: 'Using default profile instead',
+            status: 'warning',
             duration: 3000,
             isClosable: true,
           });
@@ -367,15 +394,7 @@ export default function Dashboard() {
   }, [session, toast]);
 
   // Force admin role - REMOVE IN PRODUCTION
-  useEffect(() => {
-    if (session?.user && !userDetails) {
-      setUserDetails({
-        ...session.user,
-        role: 'admin',
-        roles: ['admin']
-      });
-    }
-  }, [session, userDetails]);
+  // This is now handled in the fetch profile error case
 
   if (!session) {
     return (

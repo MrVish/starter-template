@@ -72,6 +72,9 @@ import {
   FiLock,
   FiChevronDown,
   FiChevronRight,
+  FiPieChart,
+  FiTrello,
+  FiShare2,
 } from 'react-icons/fi';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -255,9 +258,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
       href: '/campaigns',
       children: [
         { icon: FiBarChart2, label: 'Campaign Insights', href: '/campaigns/insights' },
-        { icon: FiPlus, label: 'Build Campaigns', href: '/campaigns/build' },
+        { icon: FiPlus, label: 'Build Campaigns', href: '/campaigns/builder' },
         { icon: FiEdit, label: 'View/Edit Campaigns', href: '/campaigns/view' },
         { icon: FiZap, label: 'AI Driven Plans', href: '/campaigns/ai-plans' },
+      ],
+    },
+    {
+      icon: FiPieChart,
+      label: 'Analytics',
+      href: '/analytics',
+      children: [
+        { icon: FiBarChart2, label: 'Marketing Dashboard', href: '/analytics/dashboard' },
+        { icon: FiTrello, label: 'Campaign Performance', href: '/analytics/campaigns' },
+        { icon: FiUsers, label: 'Segment Analysis', href: '/analytics/segments' },
+        { icon: FiShare2, label: 'Channel Effectiveness', href: '/analytics/channels' },
       ],
     },
     {
@@ -468,60 +482,64 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
                   )}
                 </Flex>
               ) : (
-                <NextLink href={item.href} passHref>
-                  <Flex
-                    px={6}
-                    py={3}
-                    alignItems="center"
-                    transition="background-color 0.2s ease, color 0.2s ease"
-                    color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                    bg={isActive(item.href) ? 'brand.500' : 'transparent'}
-                    _hover={{ bg: 'primary.500', color: 'white' }}
-                    borderLeftWidth="4px"
-                    borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
-                    minH="48px"
-                    cursor="pointer"
-                  >
-                    <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} flexShrink={0} />
-                    <Text 
-                      fontSize="sm" 
-                      fontWeight={isActive(item.href) ? "extrabold" : "medium"}
-                      letterSpacing="0.2px"
+                <NextLink href={item.href} passHref legacyBehavior>
+                  <Box as="a" width="100%" _hover={{ textDecoration: 'none' }}>
+                    <Flex
+                      px={6}
+                      py={3}
+                      alignItems="center"
+                      transition="background-color 0.2s ease, color 0.2s ease"
                       color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
-                      isTruncated
-                      title={item.label}
+                      bg={isActive(item.href) ? 'brand.500' : 'transparent'}
+                      _hover={{ bg: 'primary.500', color: 'white' }}
+                      borderLeftWidth="4px"
+                      borderLeftColor={isActive(item.href) ? 'brand.500' : 'transparent'}
+                      minH="48px"
+                      cursor="pointer"
                     >
-                      {item.label}
-                    </Text>
-                  </Flex>
+                      <Icon as={item.icon} mr={4} boxSize={5} color={isActive(item.href) ? 'white' : 'whiteAlpha.800'} flexShrink={0} />
+                      <Text 
+                        fontSize="sm" 
+                        fontWeight={isActive(item.href) ? "extrabold" : "medium"}
+                        letterSpacing="0.2px"
+                        color={isActive(item.href) ? 'white' : 'whiteAlpha.800'}
+                        isTruncated
+                        title={item.label}
+                      >
+                        {item.label}
+                      </Text>
+                    </Flex>
+                  </Box>
                 </NextLink>
               )}
               {item.children && isExpanded(item.label) && (
                 <VStack spacing={0} align="stretch" pl={10}>
                   {item.children.map((child) => (
-                    <NextLink key={child.label} href={child.href} passHref>
-                      <Flex
-                        px={6}
-                        py={2}
-                        cursor="pointer"
-                        alignItems="center"
-                        transition="background-color 0.2s ease, color 0.2s ease"
-                        color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
-                        bg={isActive(child.href) ? 'brand.500' : 'transparent'}
-                        _hover={{ bg: 'primary.500', color: 'white' }}
-                        onClick={() => setExpandedItems([item.label])}
-                        borderLeftWidth="4px"
-                        borderLeftColor={isActive(child.href) ? 'brand.500' : 'transparent'}
-                      >
-                        <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
-                        <Text 
-                          fontSize="sm" 
-                          fontWeight={isActive(child.href) ? "bold" : "medium"}
+                    <NextLink key={child.label} href={child.href} passHref legacyBehavior>
+                      <Box as="a" width="100%" _hover={{ textDecoration: 'none' }}>
+                        <Flex
+                          px={6}
+                          py={2}
+                          cursor="pointer"
+                          alignItems="center"
+                          transition="background-color 0.2s ease, color 0.2s ease"
                           color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
+                          bg={isActive(child.href) ? 'brand.500' : 'transparent'}
+                          _hover={{ bg: 'primary.500', color: 'white' }}
+                          onClick={() => setExpandedItems([item.label])}
+                          borderLeftWidth="4px"
+                          borderLeftColor={isActive(child.href) ? 'brand.500' : 'transparent'}
                         >
-                          {child.label}
-                        </Text>
-                      </Flex>
+                          <Icon as={child.icon} mr={4} fontSize="sm" color={isActive(child.href) ? 'white' : 'whiteAlpha.800'} />
+                          <Text 
+                            fontSize="sm" 
+                            fontWeight={isActive(child.href) ? "bold" : "medium"}
+                            color={isActive(child.href) ? 'white' : 'whiteAlpha.800'}
+                          >
+                            {child.label}
+                          </Text>
+                        </Flex>
+                      </Box>
                     </NextLink>
                   ))}
                 </VStack>
@@ -734,8 +752,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         ml={{ base: 0, md: 72 }}
         flex={1}
         bg="gray.50"
-        minH="100vh"
+        height="100vh"
         position="relative"
+        display="flex"
+        flexDirection="column"
+        overflow="hidden"
       >
         {/* Header */}
         <Box
@@ -948,7 +969,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRoleOve
         )}
 
         {/* Page Content */}
-        <Box p={4}>
+        <Box p={4} flex="1" overflowY="auto" bg="gray.50">
           {children}
         </Box>
       </Box>

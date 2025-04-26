@@ -14,6 +14,11 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
     
+    # Database pool settings - compatible with SQLite and other databases
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_recycle': 280,
+    }
+    
     # JWT Configuration
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
@@ -87,6 +92,7 @@ class Config:
 class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {}  # No connection pooling needed for in-memory SQLite 
     JWT_SECRET_KEY = 'test-key'
     CELERY_BROKER_URL = 'memory://'
     CELERY_RESULT_BACKEND = 'memory://'

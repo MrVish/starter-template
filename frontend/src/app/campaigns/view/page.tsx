@@ -93,7 +93,6 @@ import {
   FiDollarSign,
   FiMoreVertical,
 } from 'react-icons/fi';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
 
 // Sample campaigns data
 const CAMPAIGNS = [
@@ -365,7 +364,6 @@ export default function ViewEditCampaigns() {
   };
 
   return (
-    <DashboardLayout>
       <Box mb={6}>
         <HStack spacing={4} align="center" mb={6}>
           <Icon as={FiEdit} boxSize={8} color="blue.500" />
@@ -675,7 +673,7 @@ export default function ViewEditCampaigns() {
             </Box>
           </CardBody>
         </Card>
-      </Box>
+
 
       {/* Campaign Details Drawer */}
       {selectedCampaign && (
@@ -1021,6 +1019,6 @@ export default function ViewEditCampaigns() {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </DashboardLayout>
+      </Box>
   );
 } 

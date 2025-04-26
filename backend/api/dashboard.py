@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.user import User
+from models.dim_users import DimUser
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -9,7 +9,7 @@ dashboard_bp = Blueprint('dashboard', __name__)
 def get_dashboard():
     """Get dashboard data for the authenticated user"""
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user = DimUser.query.get(current_user_id)
     
     if not user:
         return jsonify({'error': 'User not found'}), 404
@@ -23,7 +23,7 @@ def get_dashboard():
             'id': user.id,
             'username': user.username,
             'email': user.email,
-            'role': user.role
+            'role': user.is_admin and 'admin' or 'user'
         },
         'stats': {
             'projects': 5,
@@ -57,13 +57,13 @@ def get_dashboard():
     }
     
     # Add role-specific data
-    if user.role == 'admin':
+    if user.is_admin:
         dashboard_data['admin'] = {
-            'total_users': User.query.count(),
+            'total_users': DimUser.query.count(),
             'system_status': 'healthy',
             'pending_approvals': 3
         }
-    elif user.role == 'analyst':
+    elif user.has_role('analyst'):
         dashboard_data['models'] = [
             {
                 'id': 1,
@@ -86,7 +86,7 @@ def get_dashboard():
 def get_summary():
     """Get a summary of key metrics for the dashboard"""
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    user = DimUser.query.get(current_user_id)
     
     if not user:
         return jsonify({'error': 'User not found'}), 404

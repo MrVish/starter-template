@@ -1,118 +1,175 @@
-import sys
 import os
+import sys
+import logging
+from datetime import datetime
+from werkzeug.security import generate_password_hash
 
-# Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the parent directory to the path so we can import the app modules
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Use the CLI app instead of the regular app
-from cli_app import app
-from models.user import Role, Permission
 from extensions import db
+from models.dim_users import DimUser
+from models.dim_roles import DimRole
+from models.dim_permissions import DimPermission
+from app import create_app
 
-def init_roles_and_permissions():
-    """
-    Initialize default roles and permissions in the database for a Marketing Analytics application
-    """
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def init_db():
+    """Initialize the database with default data"""
+    app = create_app()
     with app.app_context():
-        # Create database tables if they don't exist
+        logger.info("Creating database tables...")
         db.create_all()
         
-        # Skip if roles already exist
-        if db.session.query(Role).count() > 0:
-            print("Roles already exist!")
+        # Check if roles already exist
+        if DimRole.query.count() > 0:
+            logger.info("Database already has roles. Skipping initialization.")
             return
         
-        # Create default permissions
-        permissions = {
-            # User permissions
-            'view_user': Permission(name='view_user', description='View user profiles', resource='user', action='read'),
-            'create_user': Permission(name='create_user', description='Create new users', resource='user', action='create'),
-            'update_user': Permission(name='update_user', description='Update user profiles', resource='user', action='update'),
-            'delete_user': Permission(name='delete_user', description='Delete users', resource='user', action='delete'),
-            
-            # Campaign permissions
-            'view_campaign': Permission(name='view_campaign', description='View marketing campaigns', resource='campaign', action='read'),
-            'create_campaign': Permission(name='create_campaign', description='Create marketing campaigns', resource='campaign', action='create'),
-            'update_campaign': Permission(name='update_campaign', description='Update marketing campaigns', resource='campaign', action='update'),
-            'delete_campaign': Permission(name='delete_campaign', description='Delete marketing campaigns', resource='campaign', action='delete'),
-            
-            # Analytics permissions
-            'view_analytics': Permission(name='view_analytics', description='View marketing analytics', resource='analytics', action='read'),
-            'export_analytics': Permission(name='export_analytics', description='Export marketing analytics data', resource='analytics', action='export'),
-            
-            # AI Plan permissions
-            'generate_ai_plan': Permission(name='generate_ai_plan', description='Generate AI-driven marketing plans', resource='ai_plan', action='generate'),
-            'view_ai_plan': Permission(name='view_ai_plan', description='View AI-driven marketing plans', resource='ai_plan', action='read'),
-            'update_ai_plan': Permission(name='update_ai_plan', description='Update AI-driven marketing plans', resource='ai_plan', action='update'),
-            'delete_ai_plan': Permission(name='delete_ai_plan', description='Delete AI-driven marketing plans', resource='ai_plan', action='delete'),
-            
-            # Audience permissions
-            'view_audience': Permission(name='view_audience', description='View audience segments', resource='audience', action='read'),
-            'create_audience': Permission(name='create_audience', description='Create audience segments', resource='audience', action='create'),
-            'update_audience': Permission(name='update_audience', description='Update audience segments', resource='audience', action='update'),
-            'delete_audience': Permission(name='delete_audience', description='Delete audience segments', resource='audience', action='delete'),
-            
-            # Dashboard permissions
-            'view_dashboard': Permission(name='view_dashboard', description='View marketing dashboards', resource='dashboard', action='read'),
-            'create_dashboard': Permission(name='create_dashboard', description='Create marketing dashboards', resource='dashboard', action='create'),
-            'update_dashboard': Permission(name='update_dashboard', description='Update marketing dashboards', resource='dashboard', action='update'),
-            'delete_dashboard': Permission(name='delete_dashboard', description='Delete marketing dashboards', resource='dashboard', action='delete'),
-            
-            # System permissions
-            'view_system': Permission(name='view_system', description='View system information', resource='system', action='read'),
-            'update_system': Permission(name='update_system', description='Update system settings', resource='system', action='update'),
-        }
-        
-        # Add all permissions to the database
-        for permission in permissions.values():
-            db.session.add(permission)
-        
         # Create default roles
-        admin_role = Role(name='admin', description='Administrator with full access to all marketing features')
+        logger.info("Creating default roles...")
+        admin_role = DimRole(name="Administrator", description="Full system access")
+        manager_role = DimRole(name="Manager", description="Department manager with access to most features")
+        analyst_role = DimRole(name="Analyst", description="Can view and analyze data")
+        user_role = DimRole(name="User", description="Standard user with limited access")
         
-        # Add all permissions to admin role
-        for permission in permissions.values():
-            admin_role.add_permission(permission)
+        # Create permissions
+        logger.info("Creating permissions...")
         
-        # Create marketing manager role
-        marketing_manager_role = Role(name='marketing_manager', description='Marketing manager with campaign and analytics access')
-        marketing_manager_permissions = [
-            'view_user', 'view_campaign', 'create_campaign', 'update_campaign', 'delete_campaign',
-            'view_analytics', 'export_analytics', 'generate_ai_plan', 'view_ai_plan', 'update_ai_plan', 'delete_ai_plan',
-            'view_audience', 'create_audience', 'update_audience', 'delete_audience',
-            'view_dashboard', 'create_dashboard', 'update_dashboard'
+        # User management permissions
+        view_users = DimPermission(name="view_users", resource="users", action="read", 
+                                 description="View user accounts")
+        create_users = DimPermission(name="create_users", resource="users", action="create", 
+                                   description="Create user accounts")
+        update_users = DimPermission(name="update_users", resource="users", action="update", 
+                                   description="Update user accounts")
+        delete_users = DimPermission(name="delete_users", resource="users", action="delete", 
+                                   description="Delete user accounts")
+        
+        # Role management permissions
+        view_roles = DimPermission(name="view_roles", resource="roles", action="read", 
+                                 description="View roles")
+        create_roles = DimPermission(name="create_roles", resource="roles", action="create", 
+                                   description="Create roles")
+        update_roles = DimPermission(name="update_roles", resource="roles", action="update", 
+                                   description="Update roles")
+        delete_roles = DimPermission(name="delete_roles", resource="roles", action="delete", 
+                                   description="Delete roles")
+        
+        # Campaign permissions
+        view_campaigns = DimPermission(name="view_campaigns", resource="campaigns", action="read", 
+                                     description="View campaigns")
+        create_campaigns = DimPermission(name="create_campaigns", resource="campaigns", action="create", 
+                                       description="Create campaigns")
+        update_campaigns = DimPermission(name="update_campaigns", resource="campaigns", action="update", 
+                                       description="Update campaigns")
+        delete_campaigns = DimPermission(name="delete_campaigns", resource="campaigns", action="delete", 
+                                       description="Delete campaigns")
+        
+        # Analytics permissions
+        view_analytics = DimPermission(name="view_analytics", resource="analytics", action="read", 
+                                     description="View analytics")
+        export_analytics = DimPermission(name="export_analytics", resource="analytics", action="export", 
+                                       description="Export analytics")
+        
+        # Customer segment permissions
+        view_segments = DimPermission(name="view_segments", resource="segments", action="read", 
+                                    description="View customer segments")
+        create_segments = DimPermission(name="create_segments", resource="segments", action="create", 
+                                      description="Create customer segments")
+        update_segments = DimPermission(name="update_segments", resource="segments", action="update", 
+                                      description="Update customer segments")
+        delete_segments = DimPermission(name="delete_segments", resource="segments", action="delete", 
+                                      description="Delete customer segments")
+        
+        # Assign permissions to roles
+        logger.info("Assigning permissions to roles...")
+        
+        # Admin gets all permissions
+        admin_role.permissions = [
+            view_users, create_users, update_users, delete_users,
+            view_roles, create_roles, update_roles, delete_roles,
+            view_campaigns, create_campaigns, update_campaigns, delete_campaigns,
+            view_analytics, export_analytics,
+            view_segments, create_segments, update_segments, delete_segments
         ]
-        for perm_name in marketing_manager_permissions:
-            marketing_manager_role.add_permission(permissions[perm_name])
         
-        # Create analyst role
-        analyst_role = Role(name='analyst', description='Marketing analyst with analytics access')
-        analyst_permissions = [
-            'view_campaign', 'view_analytics', 'export_analytics', 
-            'view_ai_plan', 'generate_ai_plan',
-            'view_audience', 'create_audience', 'update_audience',
-            'view_dashboard', 'create_dashboard', 'update_dashboard'
+        # Manager gets most permissions
+        manager_role.permissions = [
+            view_users, create_users, update_users,
+            view_roles,
+            view_campaigns, create_campaigns, update_campaigns, delete_campaigns,
+            view_analytics, export_analytics,
+            view_segments, create_segments, update_segments, delete_segments
         ]
-        for perm_name in analyst_permissions:
-            analyst_role.add_permission(permissions[perm_name])
         
-        # Create basic user role (most basic access)
-        user_role = Role(name='user', description='Basic user with view access', is_default=True)
-        user_permissions = ['view_campaign', 'view_analytics', 'view_ai_plan', 'view_audience', 'view_dashboard']
-        for perm_name in user_permissions:
-            user_role.add_permission(permissions[perm_name])
+        # Analyst gets view permissions
+        analyst_role.permissions = [
+            view_users,
+            view_campaigns,
+            view_analytics, export_analytics,
+            view_segments
+        ]
         
-        # Add roles to database
-        db.session.add(admin_role)
-        db.session.add(marketing_manager_role)
-        db.session.add(analyst_role)
-        db.session.add(user_role)
+        # Users get basic permissions
+        user_role.permissions = [
+            view_campaigns,
+            view_segments
+        ]
         
-        # Commit changes
+        # Add roles to session
+        db.session.add_all([admin_role, manager_role, analyst_role, user_role])
+        
+        # Create default admin user
+        logger.info("Creating default admin user...")
+        admin_user = DimUser(
+            email="admin@example.com",
+            full_name="System Administrator",
+            password_hash=generate_password_hash("admin123"),
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        admin_user.roles = [admin_role]
+        
+        # Create default manager user
+        manager_user = DimUser(
+            email="manager@example.com",
+            full_name="Marketing Manager",
+            password_hash=generate_password_hash("manager123"),
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        manager_user.roles = [manager_role]
+        
+        # Create default analyst user
+        analyst_user = DimUser(
+            email="analyst@example.com",
+            full_name="Data Analyst",
+            password_hash=generate_password_hash("analyst123"),
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        analyst_user.roles = [analyst_role]
+        
+        # Create default regular user
+        regular_user = DimUser(
+            email="user@example.com",
+            full_name="Regular User",
+            password_hash=generate_password_hash("user123"),
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        regular_user.roles = [user_role]
+        
+        # Add users to session
+        db.session.add_all([admin_user, manager_user, analyst_user, regular_user])
+        
+        # Commit all changes
         db.session.commit()
-        
-        initialized_roles = db.session.query(Role).count()
-        print(f"Initialized {len(permissions)} permissions and {initialized_roles} roles")
+        logger.info("Database initialized successfully!")
 
-if __name__ == '__main__':
-    init_roles_and_permissions() 
+if __name__ == "__main__":
+    init_db() 

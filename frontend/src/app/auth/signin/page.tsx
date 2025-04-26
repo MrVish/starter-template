@@ -20,6 +20,7 @@ import {
   InputGroup,
   InputLeftElement,
   Icon,
+  useToast
 } from '@chakra-ui/react';
 import Link from 'next/link';
 import { FiUser, FiLock, FiMail, FiArrowLeft } from 'react-icons/fi';
@@ -30,6 +31,8 @@ export default function SignInPage() {
   const [providers, setProviders] = useState<Record<string, any> | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [debugResponse, setDebugResponse] = useState('');
+  const toast = useToast();
   
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -56,6 +59,39 @@ export default function SignInPage() {
 
   const handleOAuthSignIn = (providerId) => {
     signIn(providerId, { callbackUrl: '/dashboard' });
+  };
+  
+  // Debug function to test API connection directly
+  const testDirectApiConnection = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await response.json();
+      setDebugResponse(JSON.stringify(data, null, 2));
+      
+      toast({
+        title: response.ok ? 'API Connection Success' : 'API Connection Failed',
+        description: response.ok ? 'Direct API call successful' : `Error: ${data.error || response.statusText}`,
+        status: response.ok ? 'success' : 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      setDebugResponse(JSON.stringify(error, null, 2));
+      toast({
+        title: 'API Connection Failed',
+        description: `Error: ${error.message}`,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   if (!providers) {
@@ -270,6 +306,34 @@ export default function SignInPage() {
                     )}
                   </VStack>
                 </>
+              )}
+
+              {/* Debug button */}
+              <Button 
+                colorScheme="red" 
+                onClick={testDirectApiConnection} 
+                width="100%"
+                size="md"
+                mt={4}
+                variant="outline"
+              >
+                Test Direct API Connection
+              </Button>
+
+              {/* Debug response display */}
+              {debugResponse && (
+                <Box 
+                  mt={4} 
+                  p={3} 
+                  bg="gray.100" 
+                  borderRadius="md" 
+                  fontSize="sm" 
+                  fontFamily="monospace"
+                  overflowX="auto"
+                  whiteSpace="pre"
+                >
+                  {debugResponse}
+                </Box>
               )}
 
               <Text fontSize="sm" color="gray.500" mt={4}>

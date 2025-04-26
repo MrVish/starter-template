@@ -1,0 +1,106 @@
+Table,Column,Type,Description
+dim_users,id,BIGINT PK,Unique ID for platform user
+dim_users,email,VARCHAR(255),Email (unique)
+dim_users,full_name,VARCHAR(255),Full name
+dim_users,is_active,BOOLEAN,Active user flag
+dim_users,created_at,DATETIME,User creation time
+dim_roles,id,BIGINT PK,Role ID
+dim_roles,name,VARCHAR(100),"Role name (Admin, Analyst, etc.)"
+dim_permissions,id,BIGINT PK,Permission ID
+dim_permissions,name,VARCHAR(100),"Permission name (e.g., view_campaigns)"
+dim_permissions,resource,VARCHAR(100),Resource name
+dim_permissions,action,VARCHAR(100),Action type
+user_roles,user_id,BIGINT FK → dim_users.id,User linked to role
+user_roles,role_id,BIGINT FK → dim_roles.id,Role assigned to user
+role_permissions,role_id,BIGINT FK → dim_roles.id,Role assigned to permission
+role_permissions,permission_id,BIGINT FK → dim_permissions.id,Permission granted to role
+dim_ad_groups,id,BIGINT PK,Azure AD group ID
+dim_ad_groups,name,VARCHAR(255),AD group name
+ad_group_role_mappings,ad_group_id,BIGINT FK → dim_ad_groups.id,Maps AD group to role
+ad_group_role_mappings,role_id,BIGINT FK → dim_roles.id,Role mapped via AD group
+dim_campaigns,id,BIGINT PK,Campaign ID
+dim_campaigns,name,VARCHAR(255),Campaign name
+dim_campaigns,type,VARCHAR(100),"Campaign type (awareness, retargeting)"
+dim_campaigns,start_date,DATE,Start date
+dim_campaigns,end_date,DATE,End date
+dim_campaigns,segment_id,BIGINT FK → dim_segments.id,Targeted segment
+dim_campaigns,template_id,BIGINT FK → dim_campaign_templates.id,Optional template
+dim_campaigns,created_by,BIGINT FK → dim_users.id,User who created
+dim_channels,id,BIGINT PK,Channel ID
+dim_channels,name,VARCHAR(100),Channel name
+dim_channels,type,ENUM,Channel type: EMAIL/SMS/APP
+dim_segments,id,BIGINT PK,Segment ID
+dim_segments,name,VARCHAR(255),Segment name
+dim_segments,definition,TEXT,JSON logic definition
+dim_dates,date_key,INT PK,YYYYMMDD format
+dim_dates,date,DATE,Actual date
+dim_dates,is_weekend,BOOLEAN,Weekend flag
+dim_kpis,id,BIGINT PK,KPI ID
+dim_kpis,name,VARCHAR(100),KPI name
+dim_kpis,definition,TEXT,KPI formula
+dim_data_sources,id,BIGINT PK,Source system ID
+dim_data_sources,name,VARCHAR(255),"Source name (e.g., BigQuery)"
+dim_campaign_templates,id,BIGINT PK,Template ID
+dim_campaign_templates,title,VARCHAR(255),Template title
+dim_campaign_templates,content,TEXT,HTML/JSON content
+fact_campaign_performance,id,BIGINT PK,Performance record ID
+fact_campaign_performance,campaign_id,BIGINT FK → dim_campaigns.id,Campaign ref
+fact_campaign_performance,channel_id,BIGINT FK → dim_channels.id,Channel used
+fact_campaign_performance,segment_id,BIGINT FK → dim_segments.id,Segment targeted
+fact_campaign_performance,date_key,INT FK → dim_dates.date_key,Date
+fact_campaign_performance,impressions,BIGINT,Number of impressions
+fact_campaign_performance,clicks,BIGINT,Number of clicks
+fact_campaign_performance,conversions,BIGINT,Number of conversions
+fact_campaign_performance,spend,"DECIMAL(12,2)",Cost of campaign
+fact_channel_performance,campaign_id,BIGINT FK,Campaign ID
+fact_channel_performance,channel_id,BIGINT FK,Channel ID
+fact_channel_performance,impressions,BIGINT,Channel impressions
+fact_segment_performance,segment_id,BIGINT FK,Segment ID
+fact_segment_performance,date_key,INT FK,Date key
+fact_segment_performance,engagement_score,"DECIMAL(5,2)",Engagement metric
+fact_campaign_kpi_results,campaign_id,BIGINT FK,Campaign ID
+fact_campaign_kpi_results,kpi_id,BIGINT FK,KPI ID
+fact_campaign_kpi_results,value,"DECIMAL(10,2)",KPI outcome
+fact_data_ingestion_runs,id,BIGINT PK,Ingestion run ID
+fact_data_ingestion_runs,source_id,BIGINT FK,Source system
+fact_data_ingestion_runs,status,VARCHAR(20),"Success, Failure"
+fact_data_ingestion_runs,row_count,INT,Rows loaded
+fact_data_ingestion_runs,run_time,DATETIME,Run timestamp
+fact_user_actions,id,BIGINT PK,Action log ID
+fact_user_actions,user_id,BIGINT FK,User performing action
+fact_user_actions,action_type,VARCHAR(100),"What action (e.g., edit_campaign)"
+fact_user_actions,timestamp,DATETIME,When it occurred
+fact_feedback,id,BIGINT PK,Unique feedback ID
+fact_feedback,customer_id,VARCHAR(50) FK → dim_customers.customer_id,Customer reference
+fact_feedback,campaign_id,BIGINT FK → dim_campaigns.id,Campaign reference
+fact_feedback,rating,TINYINT,Rating score
+fact_feedback,comments,TEXT,Optional feedback
+fact_feedback,submitted_at,DATETIME,Timestamp of feedback
+dim_contact_preferences,customer_id,VARCHAR(50) PK,Customer ID
+dim_contact_preferences,do_not_email,BOOLEAN,Email opt-out
+dim_contact_preferences,do_not_sms,BOOLEAN,SMS opt-out
+dim_contact_preferences,preferred_contact_time,VARCHAR(50),Preferred time window
+dim_customer_ai_features,customer_id,VARCHAR(50) PK,Customer ID
+dim_customer_ai_features,churn_risk_score,"DECIMAL(5,2)",Churn probability
+dim_customer_ai_features,lifetime_value_score,"DECIMAL(10,2)",Predicted LTV
+dim_customer_ai_features,propensity_score,"DECIMAL(5,2)",Likelihood to respond
+dim_customer_ai_features,model_version,VARCHAR(50),Version of AI model used
+dim_customer_ai_features,scored_at,DATETIME,Scoring timestamp
+dim_customers,customer_id,VARCHAR(50),Primary Key
+dim_customers,full_name,VARCHAR(255),Cleaned and unified name
+dim_customers,dob,DATE,
+dim_customers,gender,VARCHAR(10),
+dim_customers,income_bracket,VARCHAR(50),
+dim_customers,risk_profile,VARCHAR(50),
+dim_customers,joined_date,DATE,
+dim_customers,latest_segment_id,BIGINT FK,Points to dim_segments
+dim_customers,location,VARCHAR(100),City/Region
+dim_customers,active_product_count,INT,Aggregated from fact
+fact_transactions,txn_id,VARCHAR(50),PK
+fact_transactions,customer_id,VARCHAR(50) FK ? dim_customers.customer_id,
+fact_transactions,txn_date,DATE,
+fact_transactions,product_code,VARCHAR(50),"CC, FD, Loan"
+fact_transactions,txn_amount,"DECIMAL(12,2)",
+fact_transactions,txn_type,VARCHAR(50),Debit/Credit
+fact_transactions,campaign_id,BIGINT FK (optional),To link with campaign
+fact_transactions,channel_id,BIGINT FK (optional),Where txn was triggered

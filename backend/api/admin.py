@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, decode_token
-from models.user import User, Role, Permission
+from models.dim_users import DimUser
+from models.dim_roles import DimRole
+from models.dim_permissions import DimPermission
 from extensions import db
 from flask_cors import cross_origin
 import jwt
@@ -56,7 +58,7 @@ def custom_jwt_required(optional=False):
             try:
                 # Check if user exists and has proper permissions
                 if user_id:
-                    user = User.query.get(user_id)
+                    user = DimUser.query.get(user_id)
                     if not user:
                         if optional:
                             return fn(*args, **kwargs)
@@ -101,7 +103,7 @@ def list_users():
             return jsonify({'error': 'Unauthorized - Admin access required'}), 403
             
         # Get all users
-        users = User.query.all()
+        users = DimUser.query.all()
         user_list = []
         
         # Convert to JSON
@@ -146,14 +148,14 @@ def create_user():
             return jsonify({'error': 'Username and email are required'}), 400
             
         # Check if username or email already exists
-        if User.query.filter_by(username=data.get('username')).first():
+        if DimUser.query.filter_by(username=data.get('username')).first():
             return jsonify({'error': 'Username already taken'}), 400
             
-        if User.query.filter_by(email=data.get('email')).first():
+        if DimUser.query.filter_by(email=data.get('email')).first():
             return jsonify({'error': 'Email already registered'}), 400
             
         # Create user
-        user = User(
+        user = DimUser(
             username=data.get('username'), 
             email=data.get('email'),
             first_name=data.get('first_name', ''),
@@ -168,12 +170,12 @@ def create_user():
         # Add roles if provided
         if 'roles' in data and data['roles']:
             for role_name in data['roles']:
-                role = Role.query.filter_by(name=role_name).first()
+                role = DimRole.query.filter_by(name=role_name).first()
                 if role:
                     user.roles.append(role)
                 else:
                     # Create the role if it doesn't exist
-                    new_role = Role(name=role_name, description=f"Auto-created role: {role_name}")
+                    new_role = DimRole(name=role_name, description=f"Auto-created role: {role_name}")
                     db.session.add(new_role)
                     db.session.flush()  # Assign ID without committing
                     user.roles.append(new_role)
@@ -199,7 +201,7 @@ def update_user(user_id):
         return jsonify({'error': 'Authentication required'}), 401
     
     data = request.get_json()
-    user = User.query.get_or_404(user_id)
+    user = DimUser.query.get_or_404(user_id)
     user.username = data.get('username', user.username)
     user.email = data.get('email', user.email)
     if data.get('password'):
@@ -207,7 +209,7 @@ def update_user(user_id):
     if 'roles' in data:
         user.roles = []
         for role_name in data['roles']:
-            role = Role.query.filter_by(name=role_name).first()
+            role = DimRole.query.filter_by(name=role_name).first()
             if role:
                 user.roles.append(role)
     db.session.commit()
@@ -224,7 +226,7 @@ def delete_user(user_id):
     if not current_user_id:
         return jsonify({'error': 'Authentication required'}), 401
         
-    user = User.query.get_or_404(user_id)
+    user = DimUser.query.get_or_404(user_id)
     db.session.delete(user)
     db.session.commit()
     return '', 204
@@ -246,7 +248,7 @@ def list_roles():
             return jsonify({'error': 'Unauthorized - Admin access required'}), 403
             
         # Get all roles
-        roles = Role.query.all()
+        roles = DimRole.query.all()
         role_list = []
         
         # Convert to JSON
@@ -279,7 +281,7 @@ def create_role():
         return jsonify({'error': 'Authentication required'}), 401
         
     data = request.get_json()
-    role = Role(name=data.get('name'), description=data.get('description'))
+    role = DimRole(name=data.get('name'), description=data.get('description'))
     db.session.add(role)
     db.session.commit()
     return jsonify(role.to_dict()), 201
@@ -296,7 +298,7 @@ def update_role(role_id):
         return jsonify({'error': 'Authentication required'}), 401
         
     data = request.get_json()
-    role = Role.query.get_or_404(role_id)
+    role = DimRole.query.get_or_404(role_id)
     role.name = data.get('name', role.name)
     role.description = data.get('description', role.description)
     db.session.commit()
@@ -313,7 +315,7 @@ def delete_role(role_id):
     if not current_user_id:
         return jsonify({'error': 'Authentication required'}), 401
         
-    role = Role.query.get_or_404(role_id)
+    role = DimRole.query.get_or_404(role_id)
     db.session.delete(role)
     db.session.commit()
     return '', 204
@@ -335,7 +337,7 @@ def list_permissions():
             return jsonify({'error': 'Unauthorized - Admin access required'}), 403
             
         # Get all permissions
-        permissions = Permission.query.all()
+        permissions = DimPermission.query.all()
         perm_list = []
         
         # Convert to JSON
@@ -368,7 +370,7 @@ def create_permission():
         return jsonify({'error': 'Authentication required'}), 401
         
     data = request.get_json()
-    perm = Permission(
+    perm = DimPermission(
         name=data.get('name'),
         description=data.get('description'),
         resource=data.get('resource'),
@@ -390,7 +392,7 @@ def update_permission(perm_id):
         return jsonify({'error': 'Authentication required'}), 401
         
     data = request.get_json()
-    perm = Permission.query.get_or_404(perm_id)
+    perm = DimPermission.query.get_or_404(perm_id)
     perm.name = data.get('name', perm.name)
     perm.description = data.get('description', perm.description)
     perm.resource = data.get('resource', perm.resource)
@@ -409,7 +411,7 @@ def delete_permission(perm_id):
     if not current_user_id:
         return jsonify({'error': 'Authentication required'}), 401
         
-    perm = Permission.query.get_or_404(perm_id)
+    perm = DimPermission.query.get_or_404(perm_id)
     db.session.delete(perm)
     db.session.commit()
     return '', 204

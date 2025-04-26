@@ -38,7 +38,6 @@ import {
   InputGroup,
   InputLeftAddon,
 } from '@chakra-ui/react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { FiCopy, FiDownload, FiCpu } from 'react-icons/fi';
 import { Card as CustomCard } from '../../../components/ui/Card';
 
@@ -173,7 +172,6 @@ export default function AIDrivenPlansPage() {
   }, [generatedPlan, toast]);
 
   return (
-    <DashboardLayout>
       <Box p={6}>
         <HStack spacing={4} align="center" mb={6}>
           <Icon as={FiCpu} boxSize={8} color="blue.500" />
@@ -347,7 +345,7 @@ export default function AIDrivenPlansPage() {
             </CustomCard>
           )}
         </SimpleGrid>
-      </Box>
+      
       <CustomCard p={6}>
         <Heading as="h3" size="md" mb={4}>Past AI Plans</Heading>
         <TableContainer>
@@ -374,6 +372,6 @@ export default function AIDrivenPlansPage() {
           </Table>
         </TableContainer>
       </CustomCard>
-    </DashboardLayout>
+      </Box>
   );
 } 

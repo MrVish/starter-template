@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from flask import request, g, jsonify, current_app
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-from models.user import User
+from models.dim_users import DimUser
 
 # Configure audit logger
 audit_logger = logging.getLogger('audit')
@@ -108,7 +108,7 @@ def role_required(role_name):
         def wrapped(*args, **kwargs):
             verify_jwt_in_request()
             user_id = get_jwt_identity()
-            user = User.query.get(user_id)
+            user = DimUser.query.get(user_id)
             
             if not user:
                 return jsonify({'error': 'User not found'}), 404
@@ -133,7 +133,7 @@ def permission_required(action, resource):
         def wrapped(*args, **kwargs):
             verify_jwt_in_request()
             user_id = get_jwt_identity()
-            user = User.query.get(user_id)
+            user = DimUser.query.get(user_id)
             
             if not user:
                 return jsonify({'error': 'User not found'}), 404
