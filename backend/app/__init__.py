@@ -1,15 +1,26 @@
-from flask import Flask
-from flask_cors import CORS
-from extensions import init_extensions
+"""
+FastAPI application package
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.api.v1.api import api_router
 
-def create_app():
-    app = Flask(__name__)
-    app.config.from_object('config.Config')
-    
-    # Initialize extensions
-    init_extensions(app)
-    
-    # Note: Route registration moved to cli_app.py
-    # If you need routes, run with: flask --app cli_app run --debug
-    
-    return app 
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    description=settings.PROJECT_DESCRIPTION,
+    version=settings.API_VERSION,
+)
+
+# Set up CORS middleware
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+# Include API router
+app.include_router(api_router, prefix=settings.API_V1_STR) 

@@ -1,40 +1,97 @@
-# Flask Backend
+# FastAPI Backend
+
+A modern FastAPI backend with SQLAlchemy, JWT authentication, and more.
+
+## Features
+
+- FastAPI framework with automatic API documentation
+- SQLAlchemy ORM with PostgreSQL support
+- JWT authentication
+- User management with superuser support
+- Item management with ownership
+- CORS support
+- Environment variable configuration
+- Database migrations with Alembic
+
+## Setup
+
+1. Create a virtual environment:
+```bash
+python -m venv venv
+```
+
+2. Activate the virtual environment:
+- Windows:
+```bash
+.\venv\Scripts\activate
+```
+- Linux/Mac:
+```bash
+source venv/bin/activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. Create a `.env` file in the backend directory with the following variables:
+```env
+POSTGRES_SERVER=localhost
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=app
+POSTGRES_PORT=5432
+```
+
+5. Initialize the database:
+```bash
+alembic upgrade head
+```
 
 ## Running the Application
 
-### Option 1: Using the convenience scripts
-On Windows, use one of these scripts:
-```
-.\run_cli.bat    # For Command Prompt
-.\run_cli.ps1    # For PowerShell
+1. Start the development server:
+```bash
+uvicorn app.main:app --reload
 ```
 
-### Option 2: Using Flask CLI directly
+2. Access the API documentation at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+## API Endpoints
+
+### Authentication
+- POST /api/v1/auth/login - Login and get access token
+- POST /api/v1/auth/register - Register new user
+
+### Users
+- GET /api/v1/users/me - Get current user
+- PUT /api/v1/users/me - Update current user
+- GET /api/v1/users - Get all users (superuser only)
+
+### Items
+- POST /api/v1/items - Create new item
+- GET /api/v1/items - Get all items
+- PUT /api/v1/items/{item_id} - Update item
+- DELETE /api/v1/items/{item_id} - Delete item
+
+## Development
+
+### Database Migrations
+
+1. Create a new migration:
+```bash
+alembic revision --autogenerate -m "description of changes"
 ```
-flask --app cli_app run --debug
+
+2. Apply migrations:
+```bash
+alembic upgrade head
 ```
 
-### Option 3: For production deployment
-Use a WSGI server like Gunicorn with the wsgi.py entry point:
-```
-gunicorn wsgi:app
-```
-
-## API Routes
-
-The API is structured with a versioned prefix: `/api/v1/`
-
-Main routes:
-- `/api/v1/admin/*` - Admin endpoints
-- `/api/v1/auth/*` - Authentication endpoints
-- `/api/v1/health/*` - Health and monitoring endpoints
-- `/api/v1/users/*` - User management endpoints
-
-## Code Cleanup
-
-Some components in this codebase might not be needed for your use case:
-
-- **Model Risk Management**: If you're not using model risk features, several components can be removed
-- **Marketing Analytics**: If you're not using marketing analytics, those components can be safely removed
-
-See `CLEANUP.md` for detailed instructions on how to identify and remove unnecessary code. 
+3. Rollback migrations:
+```bash
+alembic downgrade -1
+``` 

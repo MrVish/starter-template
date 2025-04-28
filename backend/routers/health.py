@@ -1,0 +1,11 @@
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/api/v1/health", tags=["health"])
+
+@router.get("/")
+def health_check():
+    return {"status": "ok"}
+
+@router.get("/version")
+def get_version():
+    return {"version": "1.0.0"} 
