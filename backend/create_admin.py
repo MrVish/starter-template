@@ -9,6 +9,10 @@ import hashlib
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 import sys
+from cli_app import app
+from extensions import db
+from models.dim_users import DimUser
+from models.dim_roles import DimRole
 
 # Set up the database path
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -221,6 +225,43 @@ def create_users(admin_role_id, user_role_id):
     
     conn.commit()
 
+def create_admin_user():
+    with app.app_context():
+        # Check if admin user already exists
+        if DimUser.query.filter_by(username='admin').first():
+            print("Admin user already exists")
+            return
+            
+        # Create admin user
+        admin = DimUser(
+            username='admin', 
+            email='admin@example.com', 
+            first_name='Admin', 
+            last_name='User', 
+            is_active=True
+        )
+        admin.set_password('admin123')
+        db.session.add(admin)
+        
+        # Create roles if they don't exist
+        admin_role = DimRole.query.filter_by(name='admin').first()
+        if not admin_role:
+            admin_role = DimRole(name='admin', description='Administrator role', is_default=False)
+            db.session.add(admin_role)
+            
+        user_role = DimRole.query.filter_by(name='User').first()
+        if not user_role:
+            user_role = DimRole(name='User', description='Standard user role', is_default=True)
+            db.session.add(user_role)
+            
+        db.session.commit()
+        
+        # Assign admin role to admin user
+        admin.add_role(admin_role)
+        db.session.commit()
+        
+        print('Admin user created successfully!')
+
 def main():
     try:
         print("Creating tables if they don't exist...")
@@ -251,4 +292,4 @@ def main():
         conn.close()
 
 if __name__ == "__main__":
-    main() 
+    create_admin_user() 

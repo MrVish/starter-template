@@ -15,6 +15,7 @@ from .dim_customer_ai_features import DimCustomerAIFeatures
 from .dim_ad_groups import DimAdGroup
 from .dim_kpis import DimKPI
 from .dim_data_sources import DimDataSource
+from .dim_merchants import DimMerchant
 
 # New Data Vault integration models
 from .dim_products import DimProduct
@@ -31,7 +32,7 @@ from .fact_data_ingestion_runs import FactDataIngestionRun
 from .fact_user_actions import FactUserAction
 
 # New fact tables from Data Vault integration
-from .fact_transactions_main import FactTransaction
+from .fact_transactions_main import FactTransaction as FactTransactionMain
 from .fact_spend_cc import FactSpendCC
 from .fact_repayments import FactRepayment
 from .fact_customer_channel_activity import FactCustomerChannelActivity
@@ -39,3 +40,4 @@ from .fact_customer_channel_activity import FactCustomerChannelActivity
 # Import association tables
 from .associations import user_roles, role_permissions
 from .ad_group_role_mappings import ad_group_role_mappings
+

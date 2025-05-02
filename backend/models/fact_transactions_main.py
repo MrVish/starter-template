@@ -1,11 +1,11 @@
 """
-Transaction fact model for data warehouse star schema
+Transaction fact model for data warehouse star schema - Data Vault version
 """
 from extensions import db
 
-class FactTransaction(db.Model):
-    """Transaction fact model representing all financial transactions"""
-    __tablename__ = "fact_transactions"
+class FactTransactionMain(db.Model):
+    """Transaction fact model representing all financial transactions from Data Vault"""
+    __tablename__ = "fact_transactions_datavault"
 
     transaction_key = db.Column(db.Integer, primary_key=True)
     txn_hk = db.Column(db.String(32), unique=True, nullable=False)
@@ -25,4 +25,7 @@ class FactTransaction(db.Model):
     load_dts = db.Column(db.DateTime(timezone=True))
     
     def __repr__(self):
-        return f'<FactTransaction {self.txn_type} - {self.txn_amount}>' 
+        return f'<FactTransactionMain {self.txn_type} - {self.txn_amount}>'
+
+# Backward compatibility alias
+FactTransaction = FactTransactionMain 

@@ -75,7 +75,7 @@ models:
       +materialized: table
     
     # Fact tables
-    fact_transactions_main:
+    fact_transactions_datavault:
       +materialized: incremental
       +unique_key: txn_hk
     

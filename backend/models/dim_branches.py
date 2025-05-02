@@ -18,7 +18,10 @@ class DimBranch(db.Model):
     last_updated_dts = db.Column(db.DateTime(timezone=True))
     
     # Relationships
-    transactions = db.relationship('FactTransaction', backref='branch')
+    transactions_main = db.relationship('FactTransactionMain', 
+                                      backref='branch',
+                                      primaryjoin="DimBranch.branch_key == FactTransactionMain.branch_key",
+                                      foreign_keys="FactTransactionMain.branch_key")
     
     def __repr__(self):
         return f'<DimBranch {self.branch_name}>' 

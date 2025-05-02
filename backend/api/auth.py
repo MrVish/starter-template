@@ -64,6 +64,12 @@ def register():
     access_token = create_access_token(identity=new_user.id)
     refresh_token = create_refresh_token(identity=new_user.id)
     
+    # Convert tokens to strings if they are bytes
+    if isinstance(access_token, bytes):
+        access_token = access_token.decode('utf-8')
+    if isinstance(refresh_token, bytes):
+        refresh_token = refresh_token.decode('utf-8')
+    
     return jsonify({
         'message': 'User registered successfully',
         'user': {
@@ -124,6 +130,12 @@ def login():
     )
     refresh_token = create_refresh_token(identity=user.id)
     
+    # Convert tokens to strings if they are bytes
+    if isinstance(access_token, bytes):
+        access_token = access_token.decode('utf-8')
+    if isinstance(refresh_token, bytes):
+        refresh_token = refresh_token.decode('utf-8')
+    
     return jsonify({
         'message': 'Login successful',
         'user': {
@@ -164,6 +176,10 @@ def refresh():
             'username': user.username
         }
     )
+    
+    # Convert token to string if it is bytes
+    if isinstance(access_token, bytes):
+        access_token = access_token.decode('utf-8')
     
     return jsonify({
         'access_token': access_token

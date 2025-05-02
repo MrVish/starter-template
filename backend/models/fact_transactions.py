@@ -9,6 +9,7 @@ class FactTransaction(db.Model):
     customer_id = db.Column(db.BigInteger, db.ForeignKey('dim_customers.id'), nullable=False)
     txn_date = db.Column(db.Date, nullable=False)
     product_code = db.Column(db.String(50))  # e.g., CC_PLATINUM, SAVINGS_ACCOUNT
+    product_key = db.Column(db.Integer, db.ForeignKey('dim_products.product_key'), nullable=True)  # Link to product dimension
     txn_amount = db.Column(db.DECIMAL(12, 2))
     txn_type = db.Column(db.String(50))  # Debit/Credit
     campaign_id = db.Column(db.BigInteger, db.ForeignKey('dim_campaigns.id'))
@@ -27,6 +28,7 @@ class FactTransaction(db.Model):
             'customer_id': self.customer_id,
             'txn_date': self.txn_date.isoformat() if self.txn_date else None,
             'product_code': self.product_code,
+            'product_key': self.product_key,
             'txn_amount': float(self.txn_amount) if self.txn_amount else 0,
             'txn_type': self.txn_type,
             'campaign_id': self.campaign_id,

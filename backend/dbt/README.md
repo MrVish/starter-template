@@ -38,7 +38,7 @@ The integration follows these key patterns:
 ### Fact Tables
 
 #### From Data Vault Integration
-- **fact_transactions_main**: Main fact table for all financial transactions.
+- **fact_transactions_datavault**: Main fact table for all financial transactions from the Data Vault.
 - **fact_spend_cc**: Credit card spending analytics fact table.
 - **fact_repayments**: Loan repayment fact table for amortization and delinquency analysis.
 - **fact_customer_channel_activity**: Customer channel engagement fact table.
@@ -77,7 +77,7 @@ hub_product           ------->  dim_products
 sat_product_creditcard ------->  dim_products
 sat_product_homeloan  ------->  dim_products
 hub_branch            ------->  dim_branches
-ev_transaction        ------->  fact_transactions_main
+ev_transaction        ------->  fact_transactions_datavault
 ev_transaction (CC)   ------->  fact_spend_cc
 ev_transaction (HL)   ------->  fact_repayments
 sat_customer_channel_activity -> fact_customer_channel_activity

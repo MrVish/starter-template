@@ -21,7 +21,16 @@ class DimProduct(db.Model):
     last_updated_dts = db.Column(db.DateTime(timezone=True))
     
     # Relationships
-    transactions = db.relationship('FactTransaction', backref='product')
+    transactions = db.relationship('FactTransaction', 
+                                 backref='product',
+                                 primaryjoin="DimProduct.product_key == FactTransaction.product_key",
+                                 foreign_keys="FactTransaction.product_key")
+    transactions_main = db.relationship('FactTransactionMain', 
+                                      backref='product',
+                                      primaryjoin="DimProduct.product_key == FactTransactionMain.product_key",
+                                      foreign_keys="FactTransactionMain.product_key")
+    spend_cc = db.relationship('FactSpendCC', backref='product')
+    repayments = db.relationship('FactRepayment', backref='product')
     
     def __repr__(self):
         return f'<DimProduct {self.product_type} - {self.account_number}>' 
