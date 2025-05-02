@@ -67,6 +67,7 @@ import { useSession } from 'next-auth/react';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@chakra-ui/react';
+import useApi from '@/hooks/useApi';
 
 // Dynamically import the analytics embed to reduce initial bundle size
 const MarketingAnalyticsEmbed = dynamic(
@@ -188,7 +189,17 @@ interface UserDetails {
 export default function Dashboard() {
   const { data: session } = useSession();
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [recentCampaigns, setRecentCampaigns] = useState<any[]>([]);
+  const [segments, setSegments] = useState<any[]>([]);
+  const [channelPerformance, setChannelPerformance] = useState<any[]>([]);
+  const [conversionFunnel, setConversionFunnel] = useState<any>(null);
   const toast = useToast();
+  
+  // Initialize our API hooks with memoization
+  const api = useApi();
   
   // Modal states
   const { 
@@ -247,57 +258,119 @@ export default function Dashboard() {
     setSelectedMetrics(selectedMetrics);
   };
 
-  const handleNewCampaign = (e) => {
+  const handleNewCampaign = async (e) => {
     e.preventDefault();
     
-    // Add validation here if needed
-    
-    // Simulate API request
-    setTimeout(() => {
+    // Add validation
+    if (!campaignForm.name || !campaignForm.type || !campaignForm.budget || !campaignForm.startDate || !campaignForm.endDate) {
       toast({
-        title: 'Campaign created.',
-        description: `Successfully created campaign: ${campaignForm.name}`,
-        status: 'success',
+        title: 'Missing information',
+        description: 'Please fill in all required fields',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Use our API hook to create a new campaign
+      const response = await api.post('/api/v1/dashboard/campaign', campaignForm);
+      
+      if (response.data?.success) {
+        toast({
+          title: 'Campaign created',
+          description: `Successfully created campaign: ${campaignForm.name}`,
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+        
+        // Reset form and fetch updated campaign list
+        setCampaignForm({
+          name: '',
+          type: 'email',
+          budget: '',
+          startDate: '',
+          endDate: '',
+          goal: ''
+        });
+        
+        fetchRecentCampaigns();
+        onNewCampaignClose();
+      } else {
+        throw new Error(response.error || 'Failed to create campaign');
+      }
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      toast({
+        title: 'Error creating campaign',
+        description: error.message || 'An unexpected error occurred',
+        status: 'error',
         duration: 5000,
         isClosable: true,
       });
-      
-      setCampaignForm({
-        name: '',
-        type: 'email',
-        budget: '',
-        startDate: '',
-        endDate: '',
-        goal: ''
-      });
-      
-      onNewCampaignClose();
-    }, 800);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleNewSegment = (e) => {
+  const handleNewSegment = async (e) => {
     e.preventDefault();
     
-    // Add validation here if needed
-    
-    // Simulate API request
-    setTimeout(() => {
+    // Add validation
+    if (!segmentForm.name || !segmentForm.criteria) {
       toast({
-        title: 'Audience segment created.',
-        description: `Successfully created segment: ${segmentForm.name}`,
-        status: 'success',
+        title: 'Missing information',
+        description: 'Please fill in all required fields',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Use our API hook to create a new segment
+      const response = await api.post('/api/v1/dashboard/segment', segmentForm);
+      
+      if (response.data?.success) {
+        toast({
+          title: 'Audience segment created',
+          description: `Successfully created segment: ${segmentForm.name}`,
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+        
+        // Reset form and fetch updated segments
+        setSegmentForm({
+          name: '',
+          criteria: '',
+          description: ''
+        });
+        
+        fetchSegments();
+        onNewSegmentClose();
+      } else {
+        throw new Error(response.error || 'Failed to create segment');
+      }
+    } catch (error) {
+      console.error('Error creating segment:', error);
+      toast({
+        title: 'Error creating segment',
+        description: error.message || 'An unexpected error occurred',
+        status: 'error',
         duration: 5000,
         isClosable: true,
       });
-      
-      setSegmentForm({
-        name: '',
-        criteria: '',
-        description: ''
-      });
-      
-      onNewSegmentClose();
-    }, 800);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDatasetUpload = (e) => {
@@ -336,23 +409,158 @@ export default function Dashboard() {
     });
   };
 
-  // Fetch user profile with roles when session is available
+  // Add better error handling for debugging
+  useEffect(() => {
+    if (api.error) {
+      console.error('API Error in dashboard:', {
+        error: api.error,
+        status: api.status,
+        data: api.data
+      });
+    }
+  }, [api.error, api.status, api.data]);
+
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    
+    try {
+      const response = await api.get('/api/v1/dashboard/');
+      
+      if (response.data?.success) {
+        setDashboardData(response.data.data);
+        console.log('Dashboard data:', response.data.data);
+      } else if (response.error) {
+        console.error('Error fetching dashboard data:', response.error, response.status);
+        toast({
+          title: 'Error fetching dashboard data',
+          description: `${response.error} (${response.status})`,
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Error in fetchDashboardData:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch stats
+  const fetchStats = async () => {
+    try {
+      const response = await api.get('/api/v1/dashboard/stats');
+      
+      if (response.data?.success) {
+        setStats(response.data.data);
+        console.log('Stats data:', response.data.data);
+      } else if (response.error) {
+        console.error('Error fetching stats:', response.error);
+      }
+    } catch (error) {
+      console.error('Error in fetchStats:', error);
+    }
+  };
+
+  // Fetch recent campaigns
+  const fetchRecentCampaigns = async () => {
+    try {
+      const response = await api.get('/api/v1/dashboard/campaigns/recent?limit=6');
+      
+      if (response.data?.success) {
+        setRecentCampaigns(response.data.data);
+        console.log('Recent campaigns:', response.data.data);
+      } else if (response.error) {
+        console.error('Error fetching recent campaigns:', response.error);
+      }
+    } catch (error) {
+      console.error('Error in fetchRecentCampaigns:', error);
+    }
+  };
+
+  // Fetch segments
+  const fetchSegments = async () => {
+    try {
+      const response = await api.get('/api/v1/dashboard/segments');
+      
+      if (response.data?.success) {
+        setSegments(response.data.data);
+        console.log('Segments:', response.data.data);
+      } else if (response.error) {
+        console.error('Error fetching segments:', response.error);
+      }
+    } catch (error) {
+      console.error('Error in fetchSegments:', error);
+    }
+  };
+
+  // Fetch channel performance
+  const fetchChannelPerformance = async () => {
+    try {
+      const response = await api.get('/api/v1/dashboard/channels');
+      
+      if (response.data?.success) {
+        setChannelPerformance(response.data.data);
+        console.log('Channel performance:', response.data.data);
+      } else if (response.error) {
+        console.error('Error fetching channel performance:', response.error);
+      }
+    } catch (error) {
+      console.error('Error in fetchChannelPerformance:', error);
+    }
+  };
+
+  // Fetch conversion funnel
+  const fetchConversionFunnel = async () => {
+    try {
+      const response = await api.get('/api/v1/dashboard/funnel');
+      
+      if (response.data?.success) {
+        setConversionFunnel(response.data.data);
+        console.log('Conversion funnel:', response.data.data);
+      } else if (response.error) {
+        console.error('Error fetching conversion funnel:', response.error);
+      }
+    } catch (error) {
+      console.error('Error in fetchConversionFunnel:', error);
+    }
+  };
+
+  // Use state to track whether initial data fetch has occurred
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
+
+  // Fetch all dashboard data when session is available - only once
+  useEffect(() => {
+    // Only fetch if we have a session and haven't already fetched
+    if (session?.accessToken && !initialFetchDone) {
+      const fetchAllData = async () => {
+        try {
+          await Promise.all([
+            fetchDashboardData(),
+            fetchStats(),
+            fetchRecentCampaigns(),
+            fetchSegments(),
+            fetchChannelPerformance(),
+            fetchConversionFunnel()
+          ]);
+          setInitialFetchDone(true);
+        } catch (error) {
+          console.error('Error fetching initial data:', error);
+        }
+      };
+      
+      fetchAllData();
+    }
+  }, [session, initialFetchDone]); // Don't include api or fetch functions
+
+  // Fetch user profile with roles when session is available (only once)
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (session?.accessToken) {
         try {
           console.log('Fetching user profile...');
-          const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/v1/users/profile`, 
-            {
-              headers: {
-                Authorization: `Bearer ${session.accessToken}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              withCredentials: true
-            }
-          );
+          const response = await api.get('/api/v1/users/profile');
           
           if (response.data) {
             console.log('User profile from API:', response.data);
@@ -373,11 +581,13 @@ export default function Dashboard() {
           
           // For development - set user as admin even if profile fetch fails
           // Remove this in production
-          setUserDetails({
-            ...session.user,
-            role: 'admin',
-            roles: ['admin']
-          });
+          if (session?.user) {
+            setUserDetails({
+              ...session.user,
+              role: 'admin',
+              roles: ['admin']
+            });
+          }
           
           toast({
             title: 'Error fetching profile',
@@ -391,10 +601,7 @@ export default function Dashboard() {
     };
 
     fetchUserProfile();
-  }, [session, toast]);
-
-  // Force admin role - REMOVE IN PRODUCTION
-  // This is now handled in the fetch profile error case
+  }, [session, toast]); // Don't include api in dependencies
 
   if (!session) {
     return (
@@ -475,34 +682,45 @@ export default function Dashboard() {
       </Flex>
       
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} mb={8}>
-        <StatCard 
-          label="Total Impressions" 
-          value="845K" 
-          change={12.5} 
-          icon={FiTrendingUp} 
-          color="blue" 
-        />
-        <StatCard 
-          label="Client Acquisition Rate" 
-          value="2.8%" 
-          change={0.8} 
-          icon={FiTrendingUp} 
-          color="green" 
-        />
-        <StatCard 
-          label="Asset Growth" 
-          value="4.7%" 
-          change={-0.5} 
-          icon={FiTrendingDown} 
-          color="orange" 
-        />
-        <StatCard 
-          label="ROI" 
-          value="328%" 
-          change={22} 
-          icon={FiTrendingUp} 
-          color="purple" 
-        />
+        {loading ? (
+          <>
+            <Skeleton height="120px" borderRadius="lg" />
+            <Skeleton height="120px" borderRadius="lg" />
+            <Skeleton height="120px" borderRadius="lg" />
+            <Skeleton height="120px" borderRadius="lg" />
+          </>
+        ) : (
+          <>
+            <StatCard 
+              label="Total Impressions" 
+              value={stats?.total_impressions?.value || "845K"} 
+              change={stats?.total_impressions?.change || 12.5} 
+              icon={FiTrendingUp} 
+              color="blue" 
+            />
+            <StatCard 
+              label="Client Acquisition Rate" 
+              value={stats?.client_acquisition_rate?.value || "2.8%"} 
+              change={stats?.client_acquisition_rate?.change || 0.8} 
+              icon={FiTrendingUp} 
+              color="green" 
+            />
+            <StatCard 
+              label="Asset Growth" 
+              value={stats?.asset_growth?.value || "4.7%"} 
+              change={stats?.asset_growth?.change || -0.5} 
+              icon={FiTrendingDown} 
+              color="orange" 
+            />
+            <StatCard 
+              label="ROI" 
+              value={stats?.roi?.value || "328%"} 
+              change={stats?.roi?.change || 22} 
+              icon={FiTrendingUp} 
+              color="purple" 
+            />
+          </>
+        )}
       </SimpleGrid>
       
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8} mb={8}>
@@ -531,56 +749,49 @@ export default function Dashboard() {
                 </Menu>
               </Flex>
               
-              <TableContainer overflowY="auto" maxH="350px">
-                <Table variant="simple" size="sm">
-                  <Thead>
-                    <Tr>
-                      <Th>Campaign</Th>
-                      <Th>Status</Th>
-                      <Th isNumeric>Budget</Th>
-                      <Th isNumeric>ROI</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    <Tr>
-                      <Td>Retirement Planning Webinar</Td>
-                      <Td><Badge colorScheme="green">Active</Badge></Td>
-                      <Td isNumeric>$12,500</Td>
-                      <Td isNumeric>428%</Td>
-                    </Tr>
-                    <Tr>
-                      <Td>Digital Banking Enrollment</Td>
-                      <Td><Badge colorScheme="green">Active</Badge></Td>
-                      <Td isNumeric>$8,000</Td>
-                      <Td isNumeric>185%</Td>
-                    </Tr>
-                    <Tr>
-                      <Td>Investment Advisory Services</Td>
-                      <Td><Badge colorScheme="orange">Paused</Badge></Td>
-                      <Td isNumeric>$3,200</Td>
-                      <Td isNumeric>210%</Td>
-                    </Tr>
-                    <Tr>
-                      <Td>Tax Season Preparation</Td>
-                      <Td><Badge colorScheme="purple">Scheduled</Badge></Td>
-                      <Td isNumeric>$15,000</Td>
-                      <Td isNumeric>--</Td>
-                    </Tr>
-                    <Tr>
-                      <Td>Mortgage Refinancing</Td>
-                      <Td><Badge colorScheme="green">Active</Badge></Td>
-                      <Td isNumeric>$5,750</Td>
-                      <Td isNumeric>156%</Td>
-                    </Tr>
-                    <Tr>
-                      <Td>Premium Client Acquisition</Td>
-                      <Td><Badge colorScheme="red">Ended</Badge></Td>
-                      <Td isNumeric>$9,200</Td>
-                      <Td isNumeric>278%</Td>
-                    </Tr>
-                  </Tbody>
-                </Table>
-              </TableContainer>
+              {loading ? (
+                <Skeleton height="350px" borderRadius="lg" />
+              ) : (
+                <TableContainer overflowY="auto" maxH="350px">
+                  <Table variant="simple" size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>Campaign</Th>
+                        <Th>Status</Th>
+                        <Th isNumeric>Budget</Th>
+                        <Th isNumeric>ROI</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {recentCampaigns.length > 0 ? (
+                        recentCampaigns.map((campaign) => (
+                          <Tr key={campaign.id}>
+                            <Td>{campaign.name}</Td>
+                            <Td>
+                              <Badge 
+                                colorScheme={
+                                  campaign.status === 'active' ? 'green' : 
+                                  campaign.status === 'paused' ? 'orange' : 
+                                  campaign.status === 'scheduled' ? 'purple' : 
+                                  'red'
+                                }
+                              >
+                                {campaign.status}
+                              </Badge>
+                            </Td>
+                            <Td isNumeric>${typeof campaign.budget === 'number' ? campaign.budget.toLocaleString() : '0'}</Td>
+                            <Td isNumeric>{campaign.roi}</Td>
+                          </Tr>
+                        ))
+                      ) : (
+                        <Tr>
+                          <Td colSpan={4} textAlign="center">No campaigns found</Td>
+                        </Tr>
+                      )}
+                    </Tbody>
+                  </Table>
+                </TableContainer>
+              )}
             </Flex>
           </CardBody>
         </Card>
@@ -600,51 +811,28 @@ export default function Dashboard() {
                 />
               </Flex>
               
-              <Stack divider={<StackDivider />} spacing={4}>
-                <Box>
-                  <Flex justify="space-between" align="flex-start">
-                    <Box>
-                      <Heading size="sm">New Banking Clients</Heading>
-                      <Text fontSize="sm" color="gray.500">Accounts opened in last 30 days</Text>
-                    </Box>
-                    <Badge colorScheme="green">16,482</Badge>
-                  </Flex>
-                  <Progress value={65} colorScheme="green" size="sm" mt={2} />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" align="flex-start">
-                    <Box>
-                      <Heading size="sm">Premier Clients</Heading>
-                      <Text fontSize="sm" color="gray.500">Assets over $500K</Text>
-                    </Box>
-                    <Badge colorScheme="purple">32,951</Badge>
-                  </Flex>
-                  <Progress value={85} colorScheme="purple" size="sm" mt={2} />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" align="flex-start">
-                    <Box>
-                      <Heading size="sm">Cart Abandoners</Heading>
-                      <Text fontSize="sm" color="gray.500">Last 7 days</Text>
-                    </Box>
-                    <Badge colorScheme="orange">8,741</Badge>
-                  </Flex>
-                  <Progress value={40} colorScheme="orange" size="sm" mt={2} />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" align="flex-start">
-                    <Box>
-                      <Heading size="sm">High-Value Prospects</Heading>
-                      <Text fontSize="sm" color="gray.500">Viewed premium products</Text>
-                    </Box>
-                    <Badge colorScheme="blue">12,385</Badge>
-                  </Flex>
-                  <Progress value={55} colorScheme="blue" size="sm" mt={2} />
-                </Box>
-              </Stack>
+              {loading ? (
+                <Skeleton height="300px" borderRadius="lg" />
+              ) : (
+                <Stack divider={<StackDivider />} spacing={4}>
+                  {segments.length > 0 ? (
+                    segments.map((segment) => (
+                      <Box key={segment.id}>
+                        <Flex justify="space-between" align="flex-start">
+                          <Box>
+                            <Heading size="sm">{segment.name}</Heading>
+                            <Text fontSize="sm" color="gray.500">{segment.description}</Text>
+                          </Box>
+                          <Badge colorScheme={segment.color_scheme}>{segment.customer_count.toLocaleString()}</Badge>
+                        </Flex>
+                        <Progress value={segment.progress_value} colorScheme={segment.color_scheme} size="sm" mt={2} />
+                      </Box>
+                    ))
+                  ) : (
+                    <Text textAlign="center" color="gray.500">No segments found</Text>
+                  )}
+                </Stack>
+              )}
             </Flex>
           </CardBody>
         </Card>
@@ -654,47 +842,25 @@ export default function Dashboard() {
             <Flex direction="column" h="100%">
               <Heading size="md" mb={4}>Channel Performance</Heading>
               
-              <Stack divider={<StackDivider />} spacing={4}>
-                <Box>
-                  <Flex justify="space-between" align="center">
-                    <Text fontWeight="medium">Social Media</Text>
-                    <Text fontWeight="bold">42%</Text>
-                  </Flex>
-                  <Progress value={42} colorScheme="orange" size="sm" mt={2} />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" align="center">
-                    <Text fontWeight="medium">Wealth Advisory Outreach</Text>
-                    <Text fontWeight="bold">28%</Text>
-                  </Flex>
-                  <Progress value={28} colorScheme="green" size="sm" mt={2} />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" align="center">
-                    <Text fontWeight="medium">Paid Search</Text>
-                    <Text fontWeight="bold">15%</Text>
-                  </Flex>
-                  <Progress value={15} colorScheme="yellow" size="sm" mt={2} />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" align="center">
-                    <Text fontWeight="medium">Organic Search</Text>
-                    <Text fontWeight="bold">10%</Text>
-                  </Flex>
-                  <Progress value={10} colorScheme="purple" size="sm" mt={2} />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" align="center">
-                    <Text fontWeight="medium">Direct Traffic</Text>
-                    <Text fontWeight="bold">5%</Text>
-                  </Flex>
-                  <Progress value={5} colorScheme="blue" size="sm" mt={2} />
-                </Box>
-              </Stack>
+              {loading ? (
+                <Skeleton height="300px" borderRadius="lg" />
+              ) : (
+                <Stack divider={<StackDivider />} spacing={4}>
+                  {channelPerformance.length > 0 ? (
+                    channelPerformance.map((channel) => (
+                      <Box key={channel.id}>
+                        <Flex justify="space-between" align="center">
+                          <Text fontWeight="medium">{channel.name}</Text>
+                          <Text fontWeight="bold">{channel.percentage}%</Text>
+                        </Flex>
+                        <Progress value={channel.percentage} colorScheme={channel.color_scheme} size="sm" mt={2} />
+                      </Box>
+                    ))
+                  ) : (
+                    <Text textAlign="center" color="gray.500">No channel data found</Text>
+                  )}
+                </Stack>
+              )}
             </Flex>
           </CardBody>
         </Card>
@@ -704,47 +870,25 @@ export default function Dashboard() {
             <Flex direction="column" h="100%">
               <Heading size="md" mb={4}>Conversion Funnel</Heading>
               
-              <Stack spacing={6} mt={4}>
-                <Box>
-                  <Flex justify="space-between" mb={1}>
-                    <Text fontWeight="medium">Impressions</Text>
-                    <Text>1,250,000</Text>
-                  </Flex>
-                  <Progress value={100} size="lg" colorScheme="blue" />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" mb={1}>
-                    <Text fontWeight="medium">Clicks</Text>
-                    <Text>125,000 (10%)</Text>
-                  </Flex>
-                  <Progress value={40} size="lg" colorScheme="green" />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" mb={1}>
-                    <Text fontWeight="medium">Add to Cart</Text>
-                    <Text>18,750 (15%)</Text>
-                  </Flex>
-                  <Progress value={15} size="lg" colorScheme="yellow" />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" mb={1}>
-                    <Text fontWeight="medium">Checkout Started</Text>
-                    <Text>9,375 (50%)</Text>
-                  </Flex>
-                  <Progress value={7.5} size="lg" colorScheme="orange" />
-                </Box>
-                
-                <Box>
-                  <Flex justify="space-between" mb={1}>
-                    <Text fontWeight="medium">Purchases</Text>
-                    <Text>6,250 (66.7%)</Text>
-                  </Flex>
-                  <Progress value={5} size="lg" colorScheme="red" />
-                </Box>
-              </Stack>
+              {loading ? (
+                <Skeleton height="300px" borderRadius="lg" />
+              ) : (
+                conversionFunnel && conversionFunnel.stages ? (
+                  <Stack spacing={6} mt={4}>
+                    {conversionFunnel.stages.map((stage, index) => (
+                      <Box key={index}>
+                        <Flex justify="space-between" mb={1}>
+                          <Text fontWeight="medium">{stage.name}</Text>
+                          <Text>{stage.formatted_value}</Text>
+                        </Flex>
+                        <Progress value={stage.progress} size="lg" colorScheme={stage.color_scheme} />
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Text textAlign="center" color="gray.500">No funnel data found</Text>
+                )
+              )}
             </Flex>
           </CardBody>
         </Card>

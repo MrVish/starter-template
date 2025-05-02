@@ -30,16 +30,22 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(app_config[config_name])
     
-    # Enhanced CORS setup
+    # Enhanced CORS setup with consistent configuration
     CORS(app, 
-         resources={r"/api/*": {
+         resources={r"/*": {
              "origins": ["http://localhost:3000"], 
              "supports_credentials": True,
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
-         }})
+             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+             "expose_headers": ["Content-Type", "Authorization"],
+             "max_age": 3600
+         }},
+         automatic_options=True)
     
-    # Initialize extensions - using the improved function from extensions.py
+    # Remove any custom after_request or before_request handlers for CORS
+    # We'll rely solely on Flask-CORS to handle OPTIONS requests and add headers
+    
+    # Initialize extensions
     init_extensions(app)
     
     # Register blueprints
@@ -75,6 +81,7 @@ def register_blueprints(app):
         from api.segments import segments_bp
         from api.customers import customers_bp
         from api.channels import channels_bp
+        from api.data import data_bp  # Import the new data blueprint
         
         # Try to import optional blueprints
         try:
@@ -102,6 +109,7 @@ def register_blueprints(app):
         app.register_blueprint(segments_bp, url_prefix=f'{api_prefix}/segments')
         app.register_blueprint(customers_bp, url_prefix=f'{api_prefix}/customers')
         app.register_blueprint(channels_bp, url_prefix=f'{api_prefix}/channels')
+        app.register_blueprint(data_bp, url_prefix=f'{api_prefix}/data')  # Register the new data blueprint
         
         # Log each registered blueprint and its URL prefix
         logger.info("Registered blueprints:")

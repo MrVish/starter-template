@@ -23,29 +23,23 @@ def create_cli_app():
     from config import app_config
     app.config.from_object(app_config['development'])
     
-    # Enhanced CORS setup
+    # Enhanced CORS setup for CLI app - use a more robust configuration
     CORS(app, 
-         resources={r"/api/*": {
+         resources={r"/*": {
              "origins": ["http://localhost:3000"], 
              "supports_credentials": True,
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
-         }})
+             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+             "expose_headers": ["Content-Type", "Authorization"],
+             "max_age": 3600
+         }},
+         automatic_options=True)
+    
+    # We'll rely solely on Flask-CORS to handle OPTIONS requests and add headers
+    # Remove any custom after_request and before_request handlers for CORS
     
     # Initialize extensions using the shared function
     init_extensions(app)
-    
-    # Add a before_request handler to properly handle OPTIONS requests
-    @app.before_request
-    def handle_options_requests():
-        from flask import request, make_response
-        if request.method == 'OPTIONS':
-            response = make_response()
-            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept')
-            response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-            response.headers.add('Access-Control-Allow-Credentials', 'true')
-            return response
     
     # Register blueprints with correct URL prefixes
     try:
@@ -60,6 +54,7 @@ def create_cli_app():
         from api.segments import segments_bp
         from api.customers import customers_bp
         from api.channels import channels_bp
+        from api.data import data_bp  # Import the new data blueprint
         
         # Try to import optional blueprints
         try:
@@ -76,9 +71,14 @@ def create_cli_app():
         except ImportError:
             logger.warning("Notifications blueprint not found")
         
+        # IMPORTANT: Register auth blueprint at /api/auth with a unique name
+        app.register_blueprint(auth_bp, url_prefix='/api/auth', name='auth_shortpath')
+        logger.info("Registered auth blueprint at /api/auth with name 'auth_shortpath'")
+        
         # Register core blueprints with explicit URL prefixes
         app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
         app.register_blueprint(health_bp, url_prefix='/api/v1/health')
+        # Register auth at v1 path with its original name
         app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
         app.register_blueprint(users_bp, url_prefix='/api/v1/users')
         app.register_blueprint(dashboard_bp, url_prefix='/api/v1/dashboard')
@@ -87,6 +87,7 @@ def create_cli_app():
         app.register_blueprint(segments_bp, url_prefix='/api/v1/segments')
         app.register_blueprint(customers_bp, url_prefix='/api/v1/customers')
         app.register_blueprint(channels_bp, url_prefix='/api/v1/channels')
+        app.register_blueprint(data_bp, url_prefix='/api/v1/data')  # Register the new data blueprint
         
         # Log routes
         logger.info("Registered CLI routes:")
@@ -122,4 +123,4 @@ except Exception as e:
         return "Application failed to initialize. Check logs for details."
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True, port=5000) 

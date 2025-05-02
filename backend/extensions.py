@@ -7,6 +7,8 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
 from flask_cors import CORS
+from flask import jsonify
+import jwt
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -21,12 +23,21 @@ def init_extensions(app):
     """Initialize Flask extensions"""
     # Initialize CORS
     try:
+        # Configure CORS to allow requests from any frontend to any API endpoint
         CORS(app, 
-             supports_credentials=True, 
-             origins=["http://localhost:3000"],
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-             max_age=3600)
+             resources={r"/*": {
+                 "origins": ["http://localhost:3000"],
+                 "supports_credentials": True,
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+                 "expose_headers": ["Content-Type", "Authorization"],
+                 "max_age": 3600
+             }},
+             automatic_options=True)
+        
+        # Remove duplicate before_request handler to prevent multiple 'Access-Control-Allow-Origin' headers
+        # We'll rely solely on Flask-CORS to handle CORS properly
+        
         logger.info("CORS initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize CORS: {e}")
@@ -52,11 +63,64 @@ def init_extensions(app):
         logger.error(f"Failed to initialize Flask-Migrate: {e}")
     
     try:
-        # Initialize Flask-JWT-Extended
+        # Initialize Flask-JWT-Extended with custom configurations
         app.config.setdefault('JWT_SECRET_KEY', app.config.get('SECRET_KEY', 'your-secret-key'))
-        app.config.setdefault('JWT_ACCESS_TOKEN_EXPIRES', 900)  # 15 minutes
+        
+        # Set JWT token expiration times - increase for development
+        app.config.setdefault('JWT_ACCESS_TOKEN_EXPIRES', 86400)  # 24 hours for development
         app.config.setdefault('JWT_REFRESH_TOKEN_EXPIRES', 604800)  # 7 days
+        
+        # Other JWT settings
+        app.config.setdefault('JWT_ERROR_MESSAGE_KEY', 'message')
+        app.config.setdefault('JWT_BLACKLIST_ENABLED', False)
+        
+        # Initialize the JWT extension
         jwt.init_app(app)
+        
+        # Register custom handlers for JWT exceptions
+        # These need to match the expected format for your flask-jwt-extended version
+        
+        @jwt.expired_token_loader
+        def expired_token_callback(*args):
+            logger.warning(f"JWT token expired: {args}")
+            return jsonify({
+                'success': False,
+                'message': 'Token has expired',
+                'error': 'token_expired',
+                'data': {}
+            }), 401
+        
+        @jwt.invalid_token_loader
+        def invalid_token_callback(error_string):
+            logger.warning(f"Invalid JWT token: {error_string}")
+            return jsonify({
+                'success': False,
+                'message': error_string,
+                'error': 'invalid_token',
+                'data': {}
+            }), 401
+        
+        @jwt.unauthorized_loader
+        def missing_token_callback(error_string):
+            logger.warning(f"Missing JWT token: {error_string}")
+            return jsonify({
+                'success': False,
+                'message': 'Authorization required',
+                'error': 'authorization_required',
+                'data': {}
+            }), 401
+            
+        # Handle raw PyJWT errors at the Flask app level (these bypass JWT-Extended)
+        @app.errorhandler(jwt.exceptions.PyJWTError)
+        def handle_jwt_error(e):
+            logger.warning(f"JWT Error: {str(e)}")
+            return jsonify({
+                'success': False,
+                'message': 'Token validation failed',
+                'error': 'token_error',
+                'data': {}
+            }), 401
+        
         logger.info("Flask-JWT-Extended initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize Flask-JWT-Extended: {e}")

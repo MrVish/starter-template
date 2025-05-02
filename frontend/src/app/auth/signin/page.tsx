@@ -20,7 +20,10 @@ import {
   InputGroup,
   InputLeftElement,
   Icon,
-  useToast
+  useToast,
+  Alert,
+  AlertIcon,
+  AlertDescription
 } from '@chakra-ui/react';
 import Link from 'next/link';
 import { FiUser, FiLock, FiMail, FiArrowLeft } from 'react-icons/fi';
@@ -32,6 +35,8 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [debugResponse, setDebugResponse] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const toast = useToast();
   
   const bg = useColorModeValue('gray.50', 'gray.900');
@@ -48,13 +53,44 @@ export default function SignInPage() {
     getProviders().then((prov) => setProviders(prov));
   }, []);
 
-  const handleCredentialsSignIn = (e) => {
+  const handleCredentialsSignIn = async (e) => {
     e.preventDefault();
-    signIn('credentials', { 
-      email, 
-      password, 
-      callbackUrl: '/dashboard'  // Redirect to dashboard on success
-    });
+    setIsSubmitting(true);
+    setError('');
+    
+    try {
+      // Use redirect: true to allow NextAuth to automatically redirect on success
+      const result = await signIn('credentials', { 
+        email, 
+        password, 
+        callbackUrl: '/dashboard',
+        redirect: true  // Enable automatic redirect
+      });
+      
+      // This code will only run if redirect fails for some reason
+      if (result?.error) {
+        // Handle authentication error
+        setError(result.error);
+        toast({
+          title: 'Sign in failed',
+          description: result.error,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+      toast({
+        title: 'Sign in error',
+        description: 'An unexpected error occurred. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleOAuthSignIn = (providerId) => {
@@ -63,27 +99,68 @@ export default function SignInPage() {
   
   // Debug function to test API connection directly
   const testDirectApiConnection = async () => {
+    setIsSubmitting(true);
+    setError('');
+    setDebugResponse('Testing connection...');
+    
     try {
-      const response = await fetch('http://localhost:5000/api/v1/auth/login', {
+      console.log('Testing direct API connection with credentials:', { email, password: '***' });
+      
+      const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email: email,
+          username: email, // Use email as username for testing
+          password: password 
+        }),
       });
       
       const data = await response.json();
-      setDebugResponse(JSON.stringify(data, null, 2));
+      console.log('Direct API response:', response.status, data);
       
-      toast({
-        title: response.ok ? 'API Connection Success' : 'API Connection Failed',
-        description: response.ok ? 'Direct API call successful' : `Error: ${data.error || response.statusText}`,
-        status: response.ok ? 'success' : 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      const responseDetails = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Array.from(response.headers).reduce((acc, [key, value]) => {
+          acc[key] = value;
+          return acc;
+        }, {}),
+        data: data
+      };
+      
+      setDebugResponse(JSON.stringify(responseDetails, null, 2));
+      
+      if (response.ok) {
+        toast({
+          title: 'API Connection Success',
+          description: 'Direct API call successful',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        const errorMsg = data.error || data.message || response.statusText || 'Unknown error';
+        setError(`API Error: ${errorMsg}`);
+        toast({
+          title: 'API Connection Failed',
+          description: `Error: ${errorMsg}`,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
-      setDebugResponse(JSON.stringify(error, null, 2));
+      console.error('Direct API connection error:', error);
+      setDebugResponse(JSON.stringify({
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      }, null, 2));
+      
+      setError(`Connection error: ${error.message}`);
       toast({
         title: 'API Connection Failed',
         description: `Error: ${error.message}`,
@@ -91,6 +168,8 @@ export default function SignInPage() {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -229,6 +308,7 @@ export default function SignInPage() {
                           _placeholder={{ color: placeholderColor }}
                           borderRadius="lg"
                           fontSize="md"
+                          isDisabled={isSubmitting}
                         />
                       </InputGroup>
                     </FormControl>
@@ -248,9 +328,18 @@ export default function SignInPage() {
                           _placeholder={{ color: placeholderColor }}
                           borderRadius="lg"
                           fontSize="md"
+                          isDisabled={isSubmitting}
                         />
                       </InputGroup>
                     </FormControl>
+                    
+                    {error && (
+                      <Alert status="error" mt={2} borderRadius="md">
+                        <AlertIcon />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <Button 
                       colorScheme="primary" 
                       type="submit" 
@@ -259,11 +348,13 @@ export default function SignInPage() {
                       mt={2}
                       py={7}
                       boxShadow="md"
-                      _hover={{ transform: 'translateY(-3px)', boxShadow: 'lg' }}
+                      _hover={{ transform: isSubmitting ? 'none' : 'translateY(-3px)', boxShadow: 'lg' }}
                       transition="all 0.3s ease"
                       borderRadius="xl"
                       fontSize="md"
                       fontWeight="semibold"
+                      isLoading={isSubmitting}
+                      loadingText="Signing in..."
                     >
                       Sign in with Credentials
                     </Button>
