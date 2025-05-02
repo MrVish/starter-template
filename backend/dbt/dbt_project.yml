@@ -1,0 +1,132 @@
+name: 'banking_analytics'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'banking_analytics'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+# This config sets materialization defaults for models
+models:
+  banking_analytics:
+    # Applies to all files under models/
+    
+    # Uncomment these lines to apply schema prefixes
+    # staging:
+    #   +schema: stg
+    # marts:
+    #   +schema: mart
+      
+    # Dimension tables
+    dim_products:
+      +materialized: incremental
+      +unique_key: product_hk
+    
+    dim_branches:
+      +materialized: incremental
+      +unique_key: branch_hk
+    
+    dim_customers:
+      +materialized: incremental
+      +unique_key: id
+    
+    dim_dates:
+      +materialized: table
+    
+    dim_segments:
+      +materialized: table
+    
+    dim_channels:
+      +materialized: table
+    
+    dim_campaigns:
+      +materialized: incremental
+      +unique_key: id
+    
+    dim_users:
+      +materialized: incremental
+      +unique_key: id
+    
+    dim_roles:
+      +materialized: table
+    
+    dim_permissions:
+      +materialized: table
+    
+    dim_customer_ai_features:
+      +materialized: incremental
+      +unique_key: id
+    
+    dim_contact_preferences:
+      +materialized: incremental
+      +unique_key: id
+    
+    dim_kpis:
+      +materialized: table
+    
+    dim_data_sources:
+      +materialized: table
+    
+    # Fact tables
+    fact_transactions_main:
+      +materialized: incremental
+      +unique_key: txn_hk
+    
+    fact_transactions:
+      +materialized: incremental
+      +unique_key: id
+    
+    fact_spend_cc:
+      +materialized: table
+    
+    fact_repayments:
+      +materialized: table
+    
+    fact_customer_channel_activity:
+      +materialized: incremental
+      +unique_key: ['customer_key', 'date_key', 'channel_key']
+      
+    fact_campaign_performance:
+      +materialized: incremental
+      +unique_key: ['campaign_id', 'date_id', 'channel_id']
+    
+    fact_channel_performance:
+      +materialized: incremental
+      +unique_key: ['channel_id', 'date_id']
+    
+    fact_feedback:
+      +materialized: incremental
+      +unique_key: id
+    
+    fact_segment_performance:
+      +materialized: incremental
+      +unique_key: ['segment_id', 'date_id']
+    
+    fact_user_actions:
+      +materialized: incremental
+      +unique_key: id
+    
+    fact_campaign_kpi_results:
+      +materialized: table
+    
+    fact_data_ingestion_runs:
+      +materialized: incremental
+      +unique_key: id
+
+# Tests configuration
+tests:
+  +store_failures: true
+  +severity: warn
+
+# This setting controls which "target" dbt uses when running commands
+target-path: "target"  # directory which will store compiled SQL files
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages" 
