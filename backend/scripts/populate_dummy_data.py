@@ -249,6 +249,7 @@ def populate_dimensions():
         # Create campaigns
         print("Creating campaigns...")
         campaign_types = ["awareness", "retargeting", "conversion", "retention", "loyalty"]
+        campaign_statuses = ["active", "paused", "scheduled", "ended"]
         campaigns = []
         
         for i in range(NUM_CAMPAIGNS):
@@ -259,6 +260,8 @@ def populate_dimensions():
                 id=i+1,  # Explicitly set ID
                 name=f"Campaign {i+1}",
                 type=random.choice(campaign_types),
+                status=random.choice(campaign_statuses),
+                budget=Decimal(str(random.uniform(5000, 50000))).quantize(Decimal('0.01')),
                 start_date=start_date,
                 end_date=end_date,
                 segment_id=random.choice(segments).id,
@@ -271,11 +274,11 @@ def populate_dimensions():
         
         # Create products
         print("Creating products...")
-        products = []
         product_types = ["CREDIT_CARD", "HOME_LOAN", "PERSONAL_LOAN", "SAVINGS_ACCOUNT", "CHECKING_ACCOUNT"]
         statuses = ["ACTIVE", "DORMANT", "CLOSED"]
         reward_programs = ["Cash Back", "Travel Points", "Shopping Points", None]
         
+        products = []
         for i in range(NUM_PRODUCTS):
             product_type = random.choice(product_types)
             
@@ -304,7 +307,7 @@ def populate_dimensions():
                 reward_program = None
                 tenure_months = None
                 property_type = None
-                
+            
             product = DimProduct(
                 product_key=i+1,  # Explicitly set ID
                 product_hk=product_hk,

@@ -5,6 +5,16 @@ import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 // API base URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Create a custom axios instance with CORS settings
+const apiClient = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+});
+
 // Define types for our hook
 interface ApiResponse<T> {
   data: T | null;
@@ -42,14 +52,26 @@ export function useApi<T = any>() {
   }, []);
 
   // Create headers with authentication
-  const getHeaders = useCallback(() => {
+  const getHeaders = useCallback((method: RequestMethod = 'GET') => {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
+    // Only add Authorization header for mutating methods or if we have a session
+    const isMutating = method !== 'GET';
     if (session?.accessToken) {
-      headers['Authorization'] = `Bearer ${session.accessToken}`;
+      try {
+        // Add token only if it's a valid JWT (simple format validation)
+        const tokenParts = session.accessToken.split('.');
+        if (tokenParts.length === 3) {
+          headers['Authorization'] = `Bearer ${session.accessToken}`;
+        } else {
+          console.warn('Invalid token format, not adding Authorization header');
+        }
+      } catch (error) {
+        console.warn('Error processing token, not adding Authorization header:', error);
+      }
     }
 
     return headers;
@@ -71,17 +93,24 @@ export function useApi<T = any>() {
       try {
         const url = endpoint.startsWith('http')
           ? endpoint
-          : `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+          : endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-        const response: AxiosResponse<R> = await axios({
+        console.log(`🔄 API ${method} Request:`, API_URL + url);
+        
+        const response: AxiosResponse<R> = await apiClient({
           method,
           url,
           data,
-          headers: getHeaders(),
+          headers: getHeaders(method),
           withCredentials: true,
+          // Ensure CORS credentials
+          xsrfCookieName: 'XSRF-TOKEN',
+          xsrfHeaderName: 'X-XSRF-TOKEN',
           ...config,
         });
 
+        console.log(`✅ API ${method} Response:`, url, response.status, response.data ? 'has data' : 'no data');
+        
         const result: ApiResponse<R> = {
           data: response.data,
           loading: false,
@@ -96,7 +125,7 @@ export function useApi<T = any>() {
 
         return result;
       } catch (err) {
-        console.log('API Error:', err);
+        console.error(`❌ API ${method} Error for ${endpoint}:`, err);
         
         const error = err as AxiosError<ErrorResponse>;
         let errorData: any = null;
@@ -125,6 +154,8 @@ export function useApi<T = any>() {
               
             // If the error has data but it's marked as successful, still return that data
             if (errorData?.success === true && errorData?.data) {
+              console.log(`⚠️ API returned success=true with error status ${error.response?.status}`, errorData);
+              
               const result: ApiResponse<R> = {
                 data: errorData.data as R,
                 loading: false,

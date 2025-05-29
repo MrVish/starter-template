@@ -15,6 +15,7 @@ class FactCampaignPerformance(db.Model):
     clicks = db.Column(db.BigInteger, default=0)
     conversions = db.Column(db.BigInteger, default=0)
     spend = db.Column(db.DECIMAL(12, 2), default=0)
+    revenue = db.Column(db.DECIMAL(12, 2), default=0)  # Revenue generated from campaign
     
     # Relationships
     date = db.relationship('DimDate', backref='campaign_performances')
@@ -34,7 +35,9 @@ class FactCampaignPerformance(db.Model):
             'clicks': self.clicks,
             'conversions': self.conversions,
             'spend': float(self.spend) if self.spend else 0,
+            'revenue': float(self.revenue) if self.revenue else 0,
             'ctr': (self.clicks / self.impressions) if self.impressions else 0,
             'conversion_rate': (self.conversions / self.clicks) if self.clicks else 0,
-            'cost_per_conversion': (float(self.spend) / self.conversions) if self.conversions else 0
+            'cost_per_conversion': (float(self.spend) / self.conversions) if self.conversions else 0,
+            'roi': ((float(self.revenue) - float(self.spend)) / float(self.spend) * 100) if float(self.spend) > 0 else 0
         } 

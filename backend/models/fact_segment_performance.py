@@ -9,6 +9,7 @@ class FactSegmentPerformance(db.Model):
     segment_id = db.Column(db.BigInteger, db.ForeignKey('dim_segments.id'), nullable=False)
     date_key = db.Column(db.Integer, db.ForeignKey('dim_dates.id'))  # Date dimension using YYYYMMDD format
     engagement_score = db.Column(db.DECIMAL(5, 2))  # 0-100 score
+    retention_rate = db.Column(db.DECIMAL(5, 2))  # Percentage of customers retained
     
     # Relationships
     date = db.relationship('DimDate', backref='segment_performances')
@@ -21,5 +22,6 @@ class FactSegmentPerformance(db.Model):
             'id': self.id,
             'segment_id': self.segment_id,
             'date_key': self.date_key,
-            'engagement_score': float(self.engagement_score) if self.engagement_score else None
+            'engagement_score': float(self.engagement_score) if self.engagement_score else None,
+            'retention_rate': float(self.retention_rate) if self.retention_rate else None
         } 

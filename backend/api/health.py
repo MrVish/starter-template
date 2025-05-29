@@ -7,7 +7,7 @@ from extensions import db
 from utils.decorators import audit_log
 from flask_cors import cross_origin
 import jwt
-
+from sqlalchemy import text
 # Create the blueprint without a url_prefix - this will be set in app.py
 health_bp = Blueprint('health', __name__)
 
@@ -28,7 +28,7 @@ def health_check():
     # Check if database connection is working
     db_status = "healthy"
     try:
-        db.session.execute("SELECT 1")
+        db.session.execute(text("SELECT 1"))
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
     

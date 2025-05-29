@@ -1,19 +1,15 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   Box,
   Heading,
   Text,
-  SimpleGrid,
   Card,
   CardBody,
   Button,
   Flex,
   Icon,
-  Input,
-  InputGroup,
-  InputLeftElement,
   Select,
   Table,
   Thead,
@@ -30,157 +26,232 @@ import {
   MenuList,
   MenuItem,
   IconButton,
-  Progress,
+  Spinner,
+  Alert,
+  AlertIcon,
+  SimpleGrid,
   Stat,
   StatLabel,
   StatNumber,
   StatHelpText,
-  Divider,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Grid,
-  GridItem,
-} from '@chakra-ui/react';
+  StatArrow,
+  Progress,
+} from '@chakra-ui/react'
 import {
   FiBarChart2,
-  FiSearch,
-  FiFilter,
   FiDownload,
-  FiTrendingUp,
-  FiTrendingDown,
-  FiDollarSign,
-  FiUsers,
-  FiShoppingBag,
-  FiClock,
   FiMoreVertical,
-  FiCalendar,
   FiPieChart,
-} from 'react-icons/fi';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
-
-// Sample key metrics data
-const KEY_METRICS = [
-  {
-    id: 1,
-    metric: 'New Client Acquisition',
-    value: '1,250',
-    target: '2,000',
-    period: 'Monthly',
-    change: '+12.5%',
-    trend: 'up',
-  },
-  {
-    id: 2,
-    metric: 'Average Assets Under Management',
-    value: '$385K',
-    target: '$300',
-    period: 'Monthly',
-    change: '+8.3%',
-    trend: 'up',
-  },
-  {
-    id: 3,
-    metric: 'Client Retention Rate',
-    value: '92.4%',
-    target: '95%',
-    period: 'Annual',
-    change: '+2.1%',
-    trend: 'up',
-  },
-  {
-    id: 4,
-    metric: 'Financial Advisory ROI',
-    value: '387%',
-    target: '450%',
-    period: 'Quarterly',
-    change: '+15.2%',
-    trend: 'up',
-  },
-];
-
-// Sample campaign performance data
-const CAMPAIGN_PERFORMANCE = [
-  {
-    id: 1,
-    name: 'Retirement Planning Webinars',
-    status: 'Active',
-    start: '2023-06-01',
-    end: '2023-08-31',
-    budget: '$85,000',
-    spend: '$45,000',
-    results: {
-      attendees: '2,850',
-      leads: '620',
-      conversions: '420',
-      revenue: '$128,500',
-    },
-  },
-  {
-    id: 2,
-    name: 'Wealth Management Advisor Program',
-    status: 'Active',
-    start: '2023-05-15',
-    end: '2023-09-30',
-    budget: '$120,000',
-    spend: '$62,500',
-    results: {
-      consultations: '380',
-      referrals: '85',
-      conversions: '280',
-      revenue: '$325,000',
-    },
-  },
-  {
-    id: 3,
-    name: 'Investment Portfolio Diversification',
-    status: 'Active',
-    start: '2023-07-01',
-    end: '2023-10-31',
-    budget: '$65,000',
-    spend: '$35,000',
-    results: {
-      educational_sessions: '45',
-      portfolio_reviews: '320',
-      conversions: '180',
-      revenue: '$185,000',
-    },
-  },
-  {
-    id: 4,
-    name: 'High-Yield Savings Campaign',
-    status: 'Planned',
-    start: '2023-09-01',
-    end: '2023-12-31',
-    budget: '$70,000',
-    spend: '$0',
-    results: {
-      account_inquiries: '0',
-      new_accounts: '0',
-      conversions: '0',
-      revenue: '$0',
-    },
-  },
-];
+  FiUsers,
+  FiTrendingUp,
+  FiTarget,
+  FiMail,
+  FiSmartphone,
+  FiGlobe,
+  FiMapPin,
+  FiHome,
+} from 'react-icons/fi'
+import DashboardLayout from '../../../components/layout/DashboardLayout'
+import useInsights from '../../../hooks/useInsights'
 
 export default function StrategyInsights() {
-  const [timeRange, setTimeRange] = useState('30d');
-  const cardBg = useColorModeValue('white', 'gray.800');
+  const [timeRange, setTimeRange] = useState('all')
+  const [forceShow, setForceShow] = useState(false)
+  const cardBg = useColorModeValue('white', 'gray.800')
 
-  const getTrendColor = (trend: string) => {
-    return trend === 'up' ? 'green' : 'red';
-  };
+  // Fetch insights data with our custom hook - ensure timeRange is valid
+  const validTimeRange = useMemo(() => {
+    // Validate timeRange to ensure it's one of the expected values
+    const validRanges = ['7d', '30d', '90d', '1y', 'all']
+    return validRanges.includes(timeRange) ? timeRange : 'all'
+  }, [timeRange])
+
+  const { data, loading, error } = useInsights(validTimeRange)
+
+  // Handle timeRange changes with validation
+  const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = e.target.value
+    console.log("Changing timeRange to:", newValue)
+    setTimeRange(newValue)
+
+    // Reset forceShow when changing time range
+    setForceShow(false)
+  }
+
+  // Debug log
+  useEffect(() => {
+    console.log("====== DEBUG: StrategyInsights component state update ======")
+    console.log("- timeRange:", timeRange)
+    console.log("- validTimeRange:", validTimeRange)
+    console.log("- loading:", loading)
+    console.log("- error:", error)
+    console.log("- data exists:", !!data)
+    if (data) {
+      console.log("- data.campaigns:", data.campaigns)
+      console.log("- campaigns length:", data.campaigns?.length || 0)
+      if (data.campaigns && data.campaigns.length > 0) {
+        console.log("- first campaign:", data.campaigns[0])
+      }
+    }
+    console.log("==========================================================")
+  }, [data, loading, error, timeRange, validTimeRange])
+
+  // Force show data after 8 seconds even if loading is still true
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        console.log("Force showing content after 8 second timeout")
+        setForceShow(true)
+      }, 8000)
+      return () => clearTimeout(timer)
+    } else {
+      setForceShow(false)
+    }
+  }, [loading])
+
+  // Check if we have any real data to display
+  const hasData = useMemo(() => {
+    if (!data) return false
+    if (!data.campaigns) return false
+    if (!Array.isArray(data.campaigns)) return false
+    if (data.campaigns.length === 0) return false
+
+    // We have campaigns, but let's verify they have the minimal required fields
+    const hasValidCampaigns = data.campaigns.some(campaign =>
+      campaign &&
+      typeof campaign === 'object' &&
+      campaign.name &&
+      campaign.status
+    )
+
+    console.log("hasData evaluation result:", hasValidCampaigns,
+      "data exists:", !!data,
+      "campaigns exists:", !!data?.campaigns,
+      "campaigns is array:", Array.isArray(data?.campaigns),
+      "campaign length:", data?.campaigns?.length || 0)
+
+    return hasValidCampaigns
+  }, [data])
+
+  console.log("Current state:", { loading, error, dataExists: !!data, hasData, forceShow })
+
+  // Show loading spinner when loading and not forced to show
+  if (loading && !forceShow) {
+    console.log("Rendering loading state")
+    return (
+      <DashboardLayout>
+        <Box mb={6}>
+          <HStack spacing={4} align="center" mb={6}>
+            <Icon as={FiPieChart} boxSize={8} color="blue.500" />
+            <Box>
+              <Heading as="h1" size="xl" color="secondary.700">
+                Strategy Insights
+              </Heading>
+              <Text color="gray.600">
+                Loading your strategy insights data...
+              </Text>
+            </Box>
+          </HStack>
+        </Box>
+        <Flex height="50vh" width="100%" justify="center" align="center" direction="column" gap={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" speed="0.65s" />
+          <Text fontSize="lg" color="blue.500">Loading insights data...</Text>
+          <Text fontSize="sm" color="gray.500" mt={2}>Taking longer than expected? <Button size="sm" variant="link" colorScheme="blue" onClick={() => setForceShow(true)}>Continue anyway</Button></Text>
+        </Flex>
+      </DashboardLayout>
+    )
+  }
+
+  // Show error state with a refresh button when not loading but we have an error or no data
+  if (!loading && (!hasData || error)) {
+    console.log("Rendering error state, reason:",
+      !data ? "no data" : !hasData ? "no valid campaigns" : "error: " + error)
+    return (
+      <DashboardLayout>
+        <Box mb={6}>
+          <HStack spacing={4} align="center" mb={6}>
+            <Icon as={FiPieChart} boxSize={8} color="blue.500" />
+            <Box>
+              <Heading as="h1" size="xl" color="secondary.700">
+                Strategy Insights
+              </Heading>
+              <Text color="gray.600">
+                Analytics and performance tracking
+              </Text>
+            </Box>
+          </HStack>
+        </Box>
+        <Alert status="warning" variant="solid" borderRadius="md" mb={6}>
+          <AlertIcon />
+          {error || "No campaign data available for the selected time period."}
+        </Alert>
+        <VStack spacing={4} align="start">
+          <Text>Try one of the following options:</Text>
+          <HStack>
+            <Select
+              maxW="200px"
+              value={timeRange}
+              onChange={handleTimeRangeChange}
+            >
+              <option value="all">All Time</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 90 Days</option>
+              <option value="1y">Last Year</option>
+            </Select>
+            <Button
+              colorScheme="blue"
+              leftIcon={<Icon as={FiBarChart2} />}
+              onClick={() => window.location.reload()}
+            >
+              Refresh Page
+            </Button>
+          </HStack>
+        </VStack>
+      </DashboardLayout>
+    )
+  }
+
+  // Ensure we have data to proceed with rendering
+  if (!data || !hasData) {
+    console.log("No data to render, returning null")
+    return null // This shouldn't happen but as a fallback
+  }
+
+  // Access data safely - we know it exists at this point
+  const { campaigns, keyMetrics, channelPerformance, segmentPerformance } = data
+  console.log("Rendering data state with", campaigns.length, "campaigns")
+
+  // Get channel icon based on channel name
+  const getChannelIcon = (channelName: string) => {
+    const name = channelName.toLowerCase()
+    if (name.includes('email')) return FiMail
+    if (name.includes('mobile') || name.includes('app')) return FiSmartphone
+    if (name.includes('social') || name.includes('web')) return FiGlobe
+    if (name.includes('branch') || name.includes('visit')) return FiMapPin
+    if (name.includes('mail')) return FiHome
+    return FiBarChart2
+  }
+
+  // Calculate color of progress bar for segments
+  const getSegmentColor = (percentage: number) => {
+    if (percentage < 30) return 'red'
+    if (percentage < 60) return 'yellow'
+    return 'green'
+  }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Completed': return 'green';
-      case 'In Progress': return 'blue';
-      case 'Planned': return 'orange';
-      default: return 'gray';
+    // Convert status to lowercase for consistent comparison
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
+      case 'active': return 'green'
+      case 'in progress': return 'blue'
+      case 'planned': return 'orange'
+      case 'paused': return 'yellow'
+      case 'completed': return 'purple'
+      default: return 'gray'
     }
-  };
+  }
 
   return (
     <DashboardLayout>
@@ -192,7 +263,7 @@ export default function StrategyInsights() {
               Strategy Insights
             </Heading>
             <Text color="gray.600">
-              Analyze and track performance of your financial marketing strategies
+              Campaign Analytics and Performance
             </Text>
           </Box>
         </HStack>
@@ -202,8 +273,10 @@ export default function StrategyInsights() {
           <Select
             maxW="200px"
             value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
+            onChange={handleTimeRangeChange}
+            isDisabled={loading} // Disable during loading
           >
+            <option value="all">All Time</option>
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
             <option value="90d">Last 90 Days</option>
@@ -211,43 +284,45 @@ export default function StrategyInsights() {
           </Select>
         </Flex>
 
-        {/* Performance Metrics */}
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-          {KEY_METRICS.map((metric) => (
-            <Card key={metric.id} bg={cardBg}>
-              <CardBody>
-                <VStack align="start" spacing={4}>
-                  <Text color="gray.500">{metric.metric}</Text>
-                  <HStack justify="space-between" w="full">
-                    <Text fontSize="2xl" fontWeight="bold">
-                      {metric.value}
-                    </Text>
-                    <Badge
-                      colorScheme={getTrendColor(metric.trend)}
-                      display="flex"
-                      alignItems="center"
-                      gap={1}
-                    >
-                      <Icon as={metric.trend === 'up' ? FiTrendingUp : FiTrendingDown} />
-                      {metric.change}
-                    </Badge>
-                  </HStack>
-                  <Box w="full">
-                    <Text fontSize="sm" color="gray.500" mb={1}>
-                      Progress to Target
-                    </Text>
-                    <Progress
-                      value={70}
-                      colorScheme={getTrendColor(metric.trend)}
-                      size="sm"
-                      borderRadius="full"
-                    />
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-          ))}
-        </SimpleGrid>
+        {/* Show loading state - different types based on context */}
+        {loading && (
+          <Alert status="info" variant="left-accent" mb={6}>
+            <AlertIcon />
+            <Flex align="center" justify="space-between" width="100%">
+              <Box>
+                <Text fontWeight="medium">Data is being refreshed</Text>
+                <Text fontSize="sm">
+                  Please wait while we fetch the latest data.
+                </Text>
+              </Box>
+              <Spinner size="sm" ml={4} />
+            </Flex>
+          </Alert>
+        )}
+
+        {/* Key Metrics */}
+        <Card bg={cardBg} mb={8}>
+          <CardBody>
+            <VStack align="start" spacing={6}>
+              <Heading size="md">Key Performance Metrics</Heading>
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} w="full">
+                {keyMetrics.map((metric) => (
+                  <Stat key={metric.id} p={3} shadow="sm" border="1px" borderColor="gray.200" borderRadius="md">
+                    <StatLabel>{metric.metric}</StatLabel>
+                    <StatNumber>{metric.value}</StatNumber>
+                    <StatHelpText>
+                      <HStack spacing={1}>
+                        <Text fontSize="xs" color="gray.500">Target: {metric.target}</Text>
+                        <StatArrow type={metric.trend === 'up' ? 'increase' : 'decrease'} />
+                        <Text>{metric.change}</Text>
+                      </HStack>
+                    </StatHelpText>
+                  </Stat>
+                ))}
+              </SimpleGrid>
+            </VStack>
+          </CardBody>
+        </Card>
 
         {/* Campaign Performance */}
         <Card bg={cardBg} mb={8}>
@@ -273,7 +348,7 @@ export default function StrategyInsights() {
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {CAMPAIGN_PERFORMANCE.map((campaign) => (
+                    {campaigns.map((campaign) => (
                       <Tr key={campaign.id}>
                         <Td fontWeight="medium">{campaign.name}</Td>
                         <Td>
@@ -290,19 +365,23 @@ export default function StrategyInsights() {
                         <Td>{campaign.budget}</Td>
                         <Td>{campaign.spend}</Td>
                         <Td>
-                                  {campaign.results.attendees && (
-                                    <Text fontSize="sm">Attendees: {campaign.results.attendees}</Text>
-                                  )}
-                                  {campaign.results.leads && (
-                                    <Text fontSize="sm">Leads: {campaign.results.leads}</Text>
-                                  )}
-                                  {campaign.results.conversions && (
-                                    <Text fontSize="sm">Conversions: {campaign.results.conversions}</Text>
-                                  )}
-                                  {campaign.results.revenue && (
-                                    <Text fontSize="sm">Revenue: {campaign.results.revenue}</Text>
-                                  )}
-                                </Td>
+                          {campaign.results && (
+                            <>
+                              {campaign.results.attendees && (
+                                <Text fontSize="sm">Attendees: {campaign.results.attendees}</Text>
+                              )}
+                              {campaign.results.leads && (
+                                <Text fontSize="sm">Leads: {campaign.results.leads}</Text>
+                              )}
+                              {campaign.results.conversions && (
+                                <Text fontSize="sm">Conversions: {campaign.results.conversions}</Text>
+                              )}
+                              {campaign.results.revenue && (
+                                <Text fontSize="sm">Revenue: {campaign.results.revenue}</Text>
+                              )}
+                            </>
+                          )}
+                        </Td>
                         <Td>
                           <Menu>
                             <MenuButton
@@ -327,44 +406,116 @@ export default function StrategyInsights() {
         </Card>
 
         {/* Channel Performance */}
-        <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
-          <GridItem>
-            <Card bg={cardBg}>
-              <CardBody>
-                <VStack align="start" spacing={6}>
-                  <Heading size="md">Channel Performance</Heading>
-                  <Box w="full" h="300px" bg="gray.50" borderRadius="md">
-                    {/* Placeholder for chart */}
-                    <Flex h="full" align="center" justify="center">
-                      <Text color="gray.500">Channel Performance Chart</Text>
-                    </Flex>
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-          <GridItem>
-            <Card bg={cardBg}>
-              <CardBody>
-                <VStack align="start" spacing={6}>
-                  <Heading size="md">Top Performing Segments</Heading>
-                  <VStack align="start" spacing={4} w="full">
-                    {['High-Value Banking', 'Digital Natives', 'Investment Focus'].map((segment) => (
-                      <Box key={segment} w="full">
-                        <HStack justify="space-between" mb={1}>
-                          <Text fontWeight="medium">{segment}</Text>
-                          <Text color="green.500">+15%</Text>
-                        </HStack>
-                        <Progress value={75} colorScheme="green" size="sm" borderRadius="full" />
-                      </Box>
+        <Card bg={cardBg} mb={8}>
+          <CardBody>
+            <VStack align="start" spacing={6}>
+              <HStack justify="space-between" w="full">
+                <Heading size="md">Channel Performance</Heading>
+                <Button leftIcon={<Icon as={FiDownload} />} variant="ghost">
+                  Export
+                </Button>
+              </HStack>
+              <Box overflowX="auto" w="full">
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th>Channel</Th>
+                      <Th>Impressions</Th>
+                      <Th>Clicks</Th>
+                      <Th>Conversions</Th>
+                      <Th>Revenue</Th>
+                      <Th>Cost</Th>
+                      <Th>ROI</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {channelPerformance.map((channel) => (
+                      <Tr key={channel.name}>
+                        <Td>
+                          <HStack>
+                            <Icon as={getChannelIcon(channel.name)} color="blue.500" />
+                            <Text fontWeight="medium">{channel.name}</Text>
+                          </HStack>
+                        </Td>
+                        <Td>{channel.impressions.toLocaleString()}</Td>
+                        <Td>{channel.clicks.toLocaleString()}</Td>
+                        <Td>{channel.conversions.toLocaleString()}</Td>
+                        <Td>${channel.revenue.toLocaleString()}</Td>
+                        <Td>${channel.cost.toLocaleString()}</Td>
+                        <Td>
+                          <Badge
+                            colorScheme={channel.roi > 200 ? 'green' : channel.roi > 100 ? 'blue' : 'yellow'}
+                          >
+                            {channel.roi}%
+                          </Badge>
+                        </Td>
+                      </Tr>
                     ))}
-                  </VStack>
-                </VStack>
-              </CardBody>
-            </Card>
-          </GridItem>
-        </Grid>
+                  </Tbody>
+                </Table>
+              </Box>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        {/* Segment Performance */}
+        <Card bg={cardBg} mb={8}>
+          <CardBody>
+            <VStack align="start" spacing={6}>
+              <HStack justify="space-between" w="full">
+                <Heading size="md">Customer Segment Performance</Heading>
+                <Button leftIcon={<Icon as={FiDownload} />} variant="ghost">
+                  Export
+                </Button>
+              </HStack>
+              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} w="full">
+                {segmentPerformance.map((segment) => {
+                  const engagementPercent = Math.round((segment.engaged / 100) * 100)
+                  const conversionPercent = Math.round((segment.converted / 100) * 100)
+                  const reachPercent = Math.round((segment.reached / 100) * 100)
+
+                  return (
+                    <Card key={segment.name} variant="outline" p={4}>
+                      <CardBody>
+                        <HStack justify="space-between" mb={4}>
+                          <Heading size="sm">{segment.name}</Heading>
+                          <Text fontWeight="bold">${segment.revenue.toLocaleString()}</Text>
+                        </HStack>
+
+                        <VStack align="start" spacing={3} w="full">
+                          <Box w="full">
+                            <HStack justify="space-between">
+                              <Text fontSize="sm">Reach ({reachPercent}%)</Text>
+                              <Text fontSize="sm" fontWeight="medium">{segment.size.toLocaleString()} customers</Text>
+                            </HStack>
+                            <Progress value={reachPercent} colorScheme={getSegmentColor(reachPercent)} size="sm" mt={1} />
+                          </Box>
+
+                          <Box w="full">
+                            <HStack justify="space-between">
+                              <Text fontSize="sm">Engagement ({engagementPercent}%)</Text>
+                              <Text fontSize="sm" fontWeight="medium">{engagementPercent}% rate</Text>
+                            </HStack>
+                            <Progress value={engagementPercent} colorScheme={getSegmentColor(engagementPercent)} size="sm" mt={1} />
+                          </Box>
+
+                          <Box w="full">
+                            <HStack justify="space-between">
+                              <Text fontSize="sm">Conversion ({conversionPercent}%)</Text>
+                              <Text fontSize="sm" fontWeight="medium">{conversionPercent}% rate</Text>
+                            </HStack>
+                            <Progress value={conversionPercent} colorScheme={getSegmentColor(conversionPercent)} size="sm" mt={1} />
+                          </Box>
+                        </VStack>
+                      </CardBody>
+                    </Card>
+                  )
+                })}
+              </SimpleGrid>
+            </VStack>
+          </CardBody>
+        </Card>
       </Box>
     </DashboardLayout>
-  );
+  )
 } 

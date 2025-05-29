@@ -9,6 +9,8 @@ class DimCampaign(db.Model):
     id = db.Column(db.BigInteger, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(100))  # awareness, retargeting, etc.
+    status = db.Column(db.String(50), default='active')  # active, paused, scheduled, ended
+    budget = db.Column(db.Numeric(12, 2), default=0)  # Campaign budget
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     segment_id = db.Column(db.BigInteger, db.ForeignKey('dim_segments.id'))
@@ -31,6 +33,8 @@ class DimCampaign(db.Model):
             'id': self.id,
             'name': self.name,
             'type': self.type,
+            'status': self.status,
+            'budget': float(self.budget) if self.budget else 0,
             'start_date': self.start_date.isoformat() if self.start_date else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'segment_id': self.segment_id,

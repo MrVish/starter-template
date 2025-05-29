@@ -74,6 +74,8 @@ import {
   Radio,
   RadioGroup,
   Stack,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react';
 import {
   FiUsers,
@@ -105,6 +107,7 @@ import {
   FiX,
 } from 'react-icons/fi';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
+import useSegments, { Segment, sampleAIChartData } from '../../../hooks/useSegments';
 
 // Import from recharts with renamed Tooltip
 import {
@@ -122,77 +125,6 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
 } from 'recharts';
-
-// Sample customer segments data
-const CUSTOMER_SEGMENTS = [
-  {
-    id: 1,
-    name: 'Premium Banking Clients',
-    description: 'Clients with balances over $250K and active investment accounts',
-    size: 23451,
-    engagement: 'High',
-    growth: '+12.5%',
-    avgValue: '$4,850',
-    lastUpdated: '2023-02-15',
-  },
-  {
-    id: 2,
-    name: 'Digital Banking Power Users',
-    description: 'Clients who conduct 90%+ of transactions via mobile/web platforms',
-    size: 78932,
-    engagement: 'Medium',
-    growth: '+8.3%',
-    avgValue: '$780',
-    lastUpdated: '2023-03-01',
-  },
-  {
-    id: 3,
-    name: 'Wealth Management Portfolio',
-    description: 'High-net-worth clients with managed investment portfolios > $1M',
-    size: 4578,
-    engagement: 'Very High',
-    growth: '+5.7%',
-    avgValue: '$15,750',
-    lastUpdated: '2023-02-28',
-  },
-  {
-    id: 4,
-    name: 'New Client Onboarding',
-    description: 'Clients who opened accounts or started investment relationships in the last 6 months',
-    size: 15243,
-    engagement: 'Low',
-    growth: '+28.9%',
-    avgValue: '$625',
-    lastUpdated: '2023-03-05',
-  },
-];
-
-// Sample data for AI-generated segment analytics
-const sampleAIChartData = {
-  spendingByCategory: [
-    { category: 'Travel', amount: 2450 },
-    { category: 'Dining', amount: 1890 },
-    { category: 'Retail', amount: 3200 },
-    { category: 'Investment', amount: 5100 },
-    { category: 'Services', amount: 980 },
-  ],
-  ageDistribution: [
-    { age: '18-24', count: 420 },
-    { age: '25-34', count: 1250 },
-    { age: '35-44', count: 2100 },
-    { age: '45-54', count: 1870 },
-    { age: '55-64', count: 980 },
-    { age: '65+', count: 580 },
-  ],
-  activityTrend: [
-    { month: 'Jan', transactions: 1200 },
-    { month: 'Feb', transactions: 1400 },
-    { month: 'Mar', transactions: 1100 },
-    { month: 'Apr', transactions: 1600 },
-    { month: 'May', transactions: 1800 },
-    { month: 'Jun', transactions: 2100 },
-  ],
-};
 
 // First define control types for different rule attributes
 const RULE_CONTROL_TYPES = {
@@ -557,6 +489,10 @@ export default function CustomerSegments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterEngagement, setFilterEngagement] = useState('All');
   const cardBg = useColorModeValue('white', 'gray.800');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Use our custom hook to fetch segment data
+  const { segments: apiSegments, loading, error } = useSegments();
   
   // AI segment states
   const [aiPrompt, setAIPrompt] = useState('');
@@ -574,17 +510,23 @@ export default function CustomerSegments() {
 
   const [editingRuleCategory, setEditingRuleCategory] = useState<string | null>(null);
   const [editedRules, setEditedRules] = useState<any>(null);
+  const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [aiAnalysisSegment, setAIAnalysisSegment] = useState<Segment | null>(null);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiModalStep, setAIModalStep] = useState(1);
 
+  // Calculate segmentStats based on API data
   const segmentStats = [
     {
       title: 'Total Segments',
-      value: CUSTOMER_SEGMENTS.length,
+      value: apiSegments.length,
       icon: FiLayers,
       color: 'blue',
     },
     {
       title: 'Total Customers',
-      value: CUSTOMER_SEGMENTS.reduce((sum, segment) => sum + segment.size, 0).toLocaleString(),
+      value: apiSegments.reduce((sum, segment) => sum + (segment.size || 0), 0).toLocaleString(),
       icon: FiUsers,
       color: 'green',
     },
@@ -602,9 +544,11 @@ export default function CustomerSegments() {
     },
   ];
 
-  const filteredSegments = CUSTOMER_SEGMENTS.filter(segment =>
+  // Filter segments based on search and filter options
+  const filteredSegments = apiSegments.filter(segment =>
     (filterEngagement === 'All' || segment.engagement === filterEngagement) &&
-    segment.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (segment.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+     segment.description?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const getEngagementColor = (engagement: string) => {
@@ -822,14 +766,25 @@ export default function CustomerSegments() {
           <Icon as={FiUsers} boxSize={8} color="blue.500" />
           <Box>
             <Heading as="h1" size="xl" color="secondary.700">
-              Client Segments
+              Customer Segments
             </Heading>
             <Text color="gray.600">
-              Define and manage client segments for targeted financial marketing
+              Define and manage customer segments for targeted financial marketing
             </Text>
           </Box>
         </HStack>
 
+        {loading ? (
+          <Flex justify="center" my={12}>
+            <Spinner size="xl" thickness="4px" color="blue.500" />
+          </Flex>
+        ) : error ? (
+          <Alert status="error" borderRadius="md" mb={6}>
+            <AlertIcon />
+            {error}
+          </Alert>
+        ) : (
+          <>
         {/* Segment Statistics */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
           {segmentStats.map((stat) => (
@@ -876,9 +831,9 @@ export default function CustomerSegments() {
           <Button leftIcon={<Icon as={FiPlus} />} colorScheme="blue" onClick={onOpen}>
             Create Segment
           </Button>
-          <Button leftIcon={<Icon as={FiZap} />} colorScheme="purple" onClick={onAIModalOpen}>
-            AI Driver Customer Segment
-          </Button>
+              <Button leftIcon={<Icon as={FiZap} />} colorScheme="purple" onClick={onAIModalOpen}>
+                AI Driver Customer Segment
+              </Button>
         </Flex>
 
         {/* Segments Table */}
@@ -898,7 +853,8 @@ export default function CustomerSegments() {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {filteredSegments.map((segment) => (
+                      {filteredSegments.length > 0 ? (
+                        filteredSegments.map((segment) => (
                     <Tr key={segment.id}>
                       <Td>
                         <VStack align="start" spacing={1}>
@@ -908,19 +864,19 @@ export default function CustomerSegments() {
                           </Text>
                         </VStack>
                       </Td>
-                      <Td>{segment.size.toLocaleString()}</Td>
+                            <Td>{segment.size?.toLocaleString()}</Td>
                       <Td>
-                        <Badge colorScheme={getEngagementColor(segment.engagement)}>
-                          {segment.engagement}
+                              <Badge colorScheme={getEngagementColor(segment.engagement || 'Medium')}>
+                                {segment.engagement || 'Medium'}
                         </Badge>
                       </Td>
                       <Td>
-                        <Text color={getGrowthColor(segment.growth)}>
-                          {segment.growth}
+                              <Text color={getGrowthColor(segment.growth || '+0.0%')}>
+                                {segment.growth || '+0.0%'}
                         </Text>
                       </Td>
-                      <Td>{segment.avgValue}</Td>
-                      <Td>{segment.lastUpdated}</Td>
+                            <Td>{segment.avgValue || '$0'}</Td>
+                            <Td>{segment.lastUpdated || segment.updated_at || 'N/A'}</Td>
                       <Td>
                         <HStack spacing={2}>
                           <IconButton
@@ -928,6 +884,10 @@ export default function CustomerSegments() {
                             aria-label="Edit"
                             size="sm"
                             variant="ghost"
+                                  onClick={() => {
+                                    setSelectedSegment(segment);
+                                    setShowCreateModal(true);
+                                  }}
                           />
                           <Menu>
                             <MenuButton
@@ -937,9 +897,18 @@ export default function CustomerSegments() {
                               size="sm"
                             />
                             <MenuList>
-                              <MenuItem icon={<Icon as={FiBarChart2} />}>View Analytics</MenuItem>
+                                    <MenuItem icon={<Icon as={FiBarChart2} />} onClick={() => {
+                                      setAIAnalysisSegment(segment);
+                                      setShowAIModal(true);
+                                      setAIModalStep(1);
+                                    }}>
+                                      AI Analysis
+                                    </MenuItem>
                               <MenuItem icon={<Icon as={FiDownload} />}>Export Data</MenuItem>
-                              <MenuItem icon={<Icon as={FiTrash2} />} color="red.500">
+                                    <MenuItem icon={<Icon as={FiTrash2} />} color="red.500" onClick={() => {
+                                      setSelectedSegment(segment);
+                                      setShowDeleteModal(true);
+                                    }}>
                                 Delete Segment
                               </MenuItem>
                             </MenuList>
@@ -947,148 +916,157 @@ export default function CustomerSegments() {
                         </HStack>
                       </Td>
                     </Tr>
-                  ))}
+                        ))
+                      ) : (
+                        <Tr>
+                          <Td colSpan={7} textAlign="center" py={6}>
+                            <Icon as={FiUsers} boxSize={8} color="gray.400" mb={2} />
+                            <Text color="gray.500">No segments found matching your filters</Text>
+                          </Td>
+                        </Tr>
+                      )}
                 </Tbody>
               </Table>
             </Box>
           </CardBody>
         </Card>
 
-        {/* Display saved AI segment inline if the option is enabled */}
-        {showInlineSaved && savedSegments.length > 0 && (
-          <Box mt={6}>
-            <Heading size="md" mb={4}>AI Generated Segments</Heading>
-            {savedSegments.map((segment) => (
-              <Card key={segment.id} mb={6}>
-                <CardBody>
-                  <VStack spacing={6} align="stretch">
-                    <Box p={4} borderWidth="1px" borderRadius="md" bg="white">
-                      <Heading size="md" mb={2} color="blue.700">
-                        {segment.name}
-                      </Heading>
-                      <Text color="gray.600" mt={1}>{segment.description}</Text>
-                    </Box>
-
-                    {/* Key metrics */}
-                    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                      <Card>
-                        <CardBody>
-                          <Stat>
-                            <StatLabel>Customer Count</StatLabel>
-                            <StatNumber>{segment.customerCount.toLocaleString()}</StatNumber>
-                          </Stat>
-                        </CardBody>
-                      </Card>
-                      <Card>
-                        <CardBody>
-                          <Stat>
-                            <StatLabel>Unique Users</StatLabel>
-                            <StatNumber>{segment.uniqueUsers.toLocaleString()}</StatNumber>
-                          </Stat>
-                        </CardBody>
-                      </Card>
-                      <Card>
-                        <CardBody>
-                          <Stat>
-                            <StatLabel>Average Spend</StatLabel>
-                            <StatNumber>{segment.avgSpend}</StatNumber>
-                          </Stat>
-                        </CardBody>
-                      </Card>
-                      <Card>
-                        <CardBody>
-                          <Stat>
-                            <StatLabel>Response Propensity</StatLabel>
-                            <StatNumber>{segment.responsePropensity}</StatNumber>
-                          </Stat>
-                        </CardBody>
-                      </Card>
-                    </SimpleGrid>
-
-                    {/* Charts section */}
-                    <Heading size="md" mt={2}>Key Insights</Heading>
-                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                      {/* Spending by Category Chart */}
-                      <Card>
-                        <CardBody>
-                          <Heading size="sm" mb={4}>Spending by Category</Heading>
-                          <Box h="200px">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RechartsBarChart
-                                data={segment.chartData.spendingByCategory}
-                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="category" />
-                                <YAxis />
-                                <RechartsTooltip />
-                                <Bar dataKey="amount" fill="#8884d8" />
-                              </RechartsBarChart>
-                            </ResponsiveContainer>
-                          </Box>
-                        </CardBody>
-                      </Card>
-                      
-                      {/* Age Distribution Chart */}
-                      <Card>
-                        <CardBody>
-                          <Heading size="sm" mb={4}>Age Distribution</Heading>
-                          <Box h="200px">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RechartsPieChart>
-                                <Pie
-                                  data={segment.chartData.ageDistribution}
-                                  cx="50%"
-                                  cy="50%"
-                                  labelLine={false}
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="count"
-                                  nameKey="age"
-                                  label={({ age }) => age}
-                                >
-                                  {segment.chartData.ageDistribution.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={[
-                                      '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a442f5', '#f542f2'
-                                    ][index % 6]} />
-                                  ))}
-                                </Pie>
-                                <RechartsTooltip />
-                              </RechartsPieChart>
-                            </ResponsiveContainer>
-                          </Box>
-                        </CardBody>
-                      </Card>
-                      
-                      {/* Activity Trend Chart */}
-                      <Card>
-                        <CardBody>
-                          <Heading size="sm" mb={4}>Activity Trend</Heading>
-                          <Box h="200px">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RechartsLineChart
-                                data={segment.chartData.activityTrend}
-                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis />
-                                <RechartsTooltip />
-                                <Legend />
-                                <Line type="monotone" dataKey="transactions" stroke="#8884d8" activeDot={{ r: 8 }} />
-                              </RechartsLineChart>
-                            </ResponsiveContainer>
-                          </Box>
-                        </CardBody>
-                      </Card>
-                    </SimpleGrid>
-                  </VStack>
-                </CardBody>
-              </Card>
-            ))}
-          </Box>
-        )}
+            {/* Display saved AI segment inline if the option is enabled */}
+            {showInlineSaved && savedSegments.length > 0 && (
+              <Box mt={6}>
+                <Heading size="md" mb={4}>AI Generated Segments</Heading>
+                {savedSegments.map((segment) => (
+                  <Card key={segment.id} mb={6}>
+                    <CardBody>
+                      <VStack spacing={6} align="stretch">
+                        <Box p={4} borderWidth="1px" borderRadius="md" bg="white">
+                          <Heading size="md" mb={2} color="blue.700">
+                            {segment.name}
+                          </Heading>
+                          <Text color="gray.600" mt={1}>{segment.description}</Text>
       </Box>
+
+                        {/* Key metrics */}
+                        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                          <Card>
+                            <CardBody>
+                              <Stat>
+                                <StatLabel>Customer Count</StatLabel>
+                                <StatNumber>{segment.customerCount.toLocaleString()}</StatNumber>
+                              </Stat>
+                            </CardBody>
+                          </Card>
+                          <Card>
+                            <CardBody>
+                              <Stat>
+                                <StatLabel>Unique Users</StatLabel>
+                                <StatNumber>{segment.uniqueUsers.toLocaleString()}</StatNumber>
+                              </Stat>
+                            </CardBody>
+                          </Card>
+                          <Card>
+                            <CardBody>
+                              <Stat>
+                                <StatLabel>Average Spend</StatLabel>
+                                <StatNumber>{segment.avgSpend}</StatNumber>
+                              </Stat>
+                            </CardBody>
+                          </Card>
+                          <Card>
+                            <CardBody>
+                              <Stat>
+                                <StatLabel>Response Propensity</StatLabel>
+                                <StatNumber>{segment.responsePropensity}</StatNumber>
+                              </Stat>
+                            </CardBody>
+                          </Card>
+                        </SimpleGrid>
+
+                        {/* Charts section */}
+                        <Heading size="md" mt={2}>Key Insights</Heading>
+                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                          {/* Spending by Category Chart */}
+                          <Card>
+                            <CardBody>
+                              <Heading size="sm" mb={4}>Spending by Category</Heading>
+                              <Box h="200px">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <RechartsBarChart
+                                    data={segment.chartData.spendingByCategory}
+                                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                                  >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="category" />
+                                    <YAxis />
+                                    <RechartsTooltip />
+                                    <Bar dataKey="amount" fill="#8884d8" />
+                                  </RechartsBarChart>
+                                </ResponsiveContainer>
+                              </Box>
+                            </CardBody>
+                          </Card>
+                          
+                          {/* Age Distribution Chart */}
+                          <Card>
+                            <CardBody>
+                              <Heading size="sm" mb={4}>Age Distribution</Heading>
+                              <Box h="200px">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <RechartsPieChart>
+                                    <Pie
+                                      data={segment.chartData.ageDistribution}
+                                      cx="50%"
+                                      cy="50%"
+                                      labelLine={false}
+                                      outerRadius={80}
+                                      fill="#8884d8"
+                                      dataKey="count"
+                                      nameKey="age"
+                                      label={({ age }) => age}
+                                    >
+                                      {segment.chartData.ageDistribution.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={[
+                                          '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a442f5', '#f542f2'
+                                        ][index % 6]} />
+                                      ))}
+                                    </Pie>
+                                    <RechartsTooltip />
+                                  </RechartsPieChart>
+                                </ResponsiveContainer>
+                              </Box>
+                            </CardBody>
+                          </Card>
+                          
+                          {/* Activity Trend Chart */}
+                          <Card>
+                            <CardBody>
+                              <Heading size="sm" mb={4}>Activity Trend</Heading>
+                              <Box h="200px">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <RechartsLineChart
+                                    data={segment.chartData.activityTrend}
+                                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                                  >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis />
+                                    <RechartsTooltip />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="transactions" stroke="#8884d8" activeDot={{ r: 8 }} />
+                                  </RechartsLineChart>
+                                </ResponsiveContainer>
+                              </Box>
+                            </CardBody>
+                          </Card>
+                        </SimpleGrid>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                ))}
+              </Box>
+            )}
+          </>
+        )}
 
       {/* Create Segment Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
@@ -1133,192 +1111,310 @@ export default function CustomerSegments() {
         </ModalContent>
       </Modal>
 
-      {/* AI Driver Customer Segment Modal */}
-      <Modal isOpen={isAIModalOpen} onClose={onAIModalClose} size="5xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            <HStack spacing={2}>
-              <Icon as={FiZap} />
-              <Text>AI Driver Customer Segment</Text>
-            </HStack>
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody py={6}>
-            {!showAIResults ? (
-              <VStack spacing={4} align="stretch">
-                <Text>
-                  Describe the customer segment you want to generate using natural language. Our AI will analyze your data and create a segment based on your description.
-                </Text>
-                <FormControl isRequired>
-                  <FormLabel>Segment Description</FormLabel>
-                  <Textarea 
-                    placeholder="E.g., Find customers who are millennials with high credit card spending on travel and entertainment, who have been customers for at least 2 years."
-                    value={aiPrompt}
-                    onChange={(e) => setAIPrompt(e.target.value)}
-                    size="lg"
-                    minH="120px"
-                    focusBorderColor="blue.400"
-                  />
-                </FormControl>
-                {isProcessing && (
-                  <Box textAlign="center" py={4}>
-                    <Spinner size="xl" color="blue.500" thickness="4px" />
-                    <Text mt={4} fontWeight="medium">
-                      Generating AI-driven customer segment...
-                    </Text>
-                  </Box>
-                )}
-              </VStack>
-            ) : (
-              <VStack spacing={6} align="stretch">
-                {/* Segment Header Section with Improved Editing UI */}
-                <Box p={5} borderWidth="1px" borderRadius="md" bg="white" boxShadow="sm">
-                  <VStack align="start" spacing={4}>
-                    <Badge colorScheme="blue" fontSize="0.8em" px={2} py={1}>AI Generated Segment</Badge>
-                    
-                    <FormControl>
-                      <FormLabel fontWeight="bold" fontSize="md">Segment Name</FormLabel>
-                      <Tooltip label="Click to edit segment name" placement="top">
-                        <Box display="inline-block" width="full">
-                          <Editable 
-                            defaultValue={aiSegmentResult.name} 
-                            fontSize="md"
-                            fontWeight="bold"
-                            width="full"
-                            isPreviewFocusable={true}
-                          >
-                            <EditablePreview 
-                              py={2}
-                              px={3}
-                              _hover={{ 
-                                background: "white", 
-                                boxShadow: "sm",
-                                borderRadius: "md",
-                                cursor: "pointer" 
-                              }}
-                              width="full"
-                            />
-                            <EditableInput 
-                              py={2}
-                              px={3}
-                              borderRadius="md"
-                              onChange={(e) => setAISegmentResult({...aiSegmentResult, name: e.target.value})} 
-                            />
-                          </Editable>
-                        </Box>
-                      </Tooltip>
-                    </FormControl>
-                    
-                    <Box width="full">
-                      <FormLabel fontWeight="bold">Description</FormLabel>
-                      <Tooltip label="Click to edit description" placement="top">
-                        <Box display="inline-block" width="full">
-                          <Editable 
-                            defaultValue={aiSegmentResult.description} 
-                            fontSize="md"
-                            width="full"
-                            isPreviewFocusable={true}
-                          >
-                            <EditablePreview 
-                              p={2}
-                              _hover={{ 
-                                background: "gray.50", 
-                                boxShadow: "sm",
-                                borderRadius: "md",
-                                cursor: "pointer" 
-                              }}
-                              width="full"
-                              color="gray.700"
-                            />
-                            <EditableInput 
-                              p={2}
-                              borderRadius="md"
-                              onChange={(e) => setAISegmentResult({...aiSegmentResult, description: e.target.value})} 
-                            />
-                          </Editable>
-                        </Box>
-                      </Tooltip>
-                    </Box>
-                  </VStack>
-                </Box>
+        {/* Delete Confirmation Modal */}
+        <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Delete Segment</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Text>
+                Are you sure you want to delete {selectedSegment?.name}? This action cannot be undone.
+              </Text>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="red">
+                Delete
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-                {/* Rules Section - User Friendly Version with Editing */}
-                <Box borderWidth="1px" borderRadius="md" p={5} boxShadow="sm">
-                  <HStack justifyContent="space-between" mb={4}>
-                    <Heading size="md" display="flex" alignItems="center">
-                      <Icon as={FiFilter} mr={2} color="blue.500" />
-                      Segment Rules
-                    </Heading>
-                    <FormControl display="flex" alignItems="center" width="auto">
-                      <FormLabel htmlFor="show-rules" mb="0" fontSize="sm" whiteSpace="nowrap" mr={3}>
-                        Show Rules
-                      </FormLabel>
-                      <Switch id="show-rules" colorScheme="blue" 
-                        isChecked={showRules}
-                        onChange={() => setShowRules(!showRules)}
-                      />
-                    </FormControl>
-                  </HStack>
-                  
-                  {showRules && segmentRules && (
-                    <VStack spacing={4} align="stretch">
-                      {/* Expected Results Summary */}
-                      <Box 
-                        p={4} 
-                        borderWidth="1px" 
-                        borderRadius="md" 
-                        bg="white" 
-                        boxShadow="sm"
-                      >
-                        <HStack spacing={4}>
-                          <Icon as={FiUsers} boxSize={6} color="blue.500" />
-                          <Box>
-                            <Text fontWeight="bold">Expected Results</Text>
-                            <Text>
-                              This segment will include approximately {segmentRules.expectedResults.count.toLocaleString()} customers,
-                              which is about {segmentRules.expectedResults.percentOfTotal} of your total customer base.
-                            </Text>
-                          </Box>
-                        </HStack>
-                      </Box>
+        {/* AI Driver Customer Segment Modal */}
+        <Modal isOpen={isAIModalOpen} onClose={onAIModalClose} size="5xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <HStack spacing={2}>
+                <Icon as={FiZap} />
+                <Text>AI Driver Customer Segment</Text>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton />
+            <ModalBody py={6}>
+              {!showAIResults ? (
+                <VStack spacing={4} align="stretch">
+                  <Text>
+                    Describe the customer segment you want to generate using natural language. Our AI will analyze your data and create a segment based on your description.
+                  </Text>
+                  <FormControl isRequired>
+                    <FormLabel>Segment Description</FormLabel>
+                    <Textarea 
+                      placeholder="E.g., Find customers who are millennials with high credit card spending on travel and entertainment, who have been customers for at least 2 years."
+                      value={aiPrompt}
+                      onChange={(e) => setAIPrompt(e.target.value)}
+                      size="lg"
+                      minH="120px"
+                      focusBorderColor="blue.400"
+                    />
+                  </FormControl>
+                  {isProcessing && (
+                    <Box textAlign="center" py={4}>
+                      <Spinner size="xl" color="blue.500" thickness="4px" />
+                      <Text mt={4} fontWeight="medium">
+                        Generating AI-driven customer segment...
+                      </Text>
+                    </Box>
+                  )}
+                </VStack>
+              ) : (
+                <VStack spacing={6} align="stretch">
+                  {/* Segment Header Section with Improved Editing UI */}
+                  <Box p={5} borderWidth="1px" borderRadius="md" bg="white" boxShadow="sm">
+                    <VStack align="start" spacing={4}>
+                      <Badge colorScheme="blue" fontSize="0.8em" px={2} py={1}>AI Generated Segment</Badge>
                       
-                      {/* Rules Accordion for better organization */}
-                      <Accordion allowMultiple defaultIndex={[0]} borderWidth="0px">
-                        {Object.keys(segmentRules).filter(cat => cat !== 'expectedResults').map((category) => (
-                          <AccordionItem key={category} mb={3} borderWidth="1px" borderRadius="md" overflow="hidden">
-                            <AccordionButton bg={editingRuleCategory === category ? "gray.100" : "white"} py={3}>
-                              <HStack flex="1" textAlign="left" spacing={3}>
-                                <Icon as={getCategoryIcon(category)} color="blue.500" />
-                                <Text fontWeight="semibold">{getCategoryName(category)}</Text>
-                                {editingRuleCategory === category && (
-                                  <Badge colorScheme="blue" ml={2}>Editing</Badge>
-                                )}
-                              </HStack>
-                              <HStack>
-                                {editingRuleCategory !== category && (
-                                  <Tooltip label="Edit rules" placement="top">
-                                    <Box display="inline-block">
-                                      <IconButton
-                                        aria-label="Edit rules"
-                                        icon={<Icon as={FiEdit} />}
-                                        size="sm"
-                                        variant="ghost"
-                                        ml={2}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          toggleRuleEditing(category);
-                                        }}
-                                      />
-                                    </Box>
-                                  </Tooltip>
-                                )}
-                                <AccordionIcon />
-                              </HStack>
-                            </AccordionButton>
-                            <AccordionPanel pb={4}>
-                              {editingRuleCategory === category ? (
-                                <VStack spacing={4} align="stretch">
+                      <FormControl>
+                        <FormLabel fontWeight="bold" fontSize="md">Segment Name</FormLabel>
+                        <Tooltip label="Click to edit segment name" placement="top">
+                          <Box display="inline-block" width="full">
+                            <Editable 
+                              defaultValue={aiSegmentResult.name} 
+                              fontSize="md"
+                              fontWeight="bold"
+                              width="full"
+                              isPreviewFocusable={true}
+                            >
+                              <EditablePreview 
+                                py={2}
+                                px={3}
+                                _hover={{ 
+                                  background: "white", 
+                                  boxShadow: "sm",
+                                  borderRadius: "md",
+                                  cursor: "pointer" 
+                                }}
+                                width="full"
+                              />
+                              <EditableInput 
+                                py={2}
+                                px={3}
+                                borderRadius="md"
+                                onChange={(e) => setAISegmentResult({...aiSegmentResult, name: e.target.value})} 
+                              />
+                            </Editable>
+                          </Box>
+                        </Tooltip>
+                      </FormControl>
+                      
+                      <Box width="full">
+                        <FormLabel fontWeight="bold">Description</FormLabel>
+                        <Tooltip label="Click to edit description" placement="top">
+                          <Box display="inline-block" width="full">
+                            <Editable 
+                              defaultValue={aiSegmentResult.description} 
+                              fontSize="md"
+                              width="full"
+                              isPreviewFocusable={true}
+                            >
+                              <EditablePreview 
+                                p={2}
+                                _hover={{ 
+                                  background: "gray.50", 
+                                  boxShadow: "sm",
+                                  borderRadius: "md",
+                                  cursor: "pointer" 
+                                }}
+                                width="full"
+                                color="gray.700"
+                              />
+                              <EditableInput 
+                                p={2}
+                                borderRadius="md"
+                                onChange={(e) => setAISegmentResult({...aiSegmentResult, description: e.target.value})} 
+                              />
+                            </Editable>
+                          </Box>
+                        </Tooltip>
+                      </Box>
+                    </VStack>
+                  </Box>
+
+                  {/* Rules Section - User Friendly Version with Editing */}
+                  <Box borderWidth="1px" borderRadius="md" p={5} boxShadow="sm">
+                    <HStack justifyContent="space-between" mb={4}>
+                      <Heading size="md" display="flex" alignItems="center">
+                        <Icon as={FiFilter} mr={2} color="blue.500" />
+                        Segment Rules
+                      </Heading>
+                      <FormControl display="flex" alignItems="center" width="auto">
+                        <FormLabel htmlFor="show-rules" mb="0" fontSize="sm" whiteSpace="nowrap" mr={3}>
+                          Show Rules
+                        </FormLabel>
+                        <Switch id="show-rules" colorScheme="blue" 
+                          isChecked={showRules}
+                          onChange={() => setShowRules(!showRules)}
+                        />
+                      </FormControl>
+                    </HStack>
+                    
+                    {showRules && segmentRules && (
+                      <VStack spacing={4} align="stretch">
+                        {/* Expected Results Summary */}
+                        <Box 
+                          p={4} 
+                          borderWidth="1px" 
+                          borderRadius="md" 
+                          bg="white" 
+                          boxShadow="sm"
+                        >
+                          <HStack spacing={4}>
+                            <Icon as={FiUsers} boxSize={6} color="blue.500" />
+                            <Box>
+                              <Text fontWeight="bold">Expected Results</Text>
+                              <Text>
+                                This segment will include approximately {segmentRules.expectedResults.count.toLocaleString()} customers,
+                                which is about {segmentRules.expectedResults.percentOfTotal} of your total customer base.
+                              </Text>
+                            </Box>
+                          </HStack>
+                        </Box>
+                        
+                        {/* Rules Accordion for better organization */}
+                        <Accordion allowMultiple defaultIndex={[0]} borderWidth="0px">
+                          {Object.keys(segmentRules).filter(cat => cat !== 'expectedResults').map((category) => (
+                            <AccordionItem key={category} mb={3} borderWidth="1px" borderRadius="md" overflow="hidden">
+                              <AccordionButton bg={editingRuleCategory === category ? "gray.100" : "white"} py={3}>
+                                <HStack flex="1" textAlign="left" spacing={3}>
+                                  <Icon as={getCategoryIcon(category)} color="blue.500" />
+                                  <Text fontWeight="semibold">{getCategoryName(category)}</Text>
+                                  {editingRuleCategory === category && (
+                                    <Badge colorScheme="blue" ml={2}>Editing</Badge>
+                                  )}
+                                </HStack>
+                                <HStack>
+                                  {editingRuleCategory !== category && (
+                                    <Tooltip label="Edit rules" placement="top">
+                                      <Box display="inline-block">
+                                        <IconButton
+                                          aria-label="Edit rules"
+                                          icon={<Icon as={FiEdit} />}
+                                          size="sm"
+                                          variant="ghost"
+                                          ml={2}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleRuleEditing(category);
+                                          }}
+                                        />
+                                      </Box>
+                                    </Tooltip>
+                                  )}
+                                  <AccordionIcon />
+                                </HStack>
+                              </AccordionButton>
+                              <AccordionPanel pb={4}>
+                                {editingRuleCategory === category ? (
+                                  <VStack spacing={4} align="stretch">
+                                    <Table variant="simple" size="sm">
+                                      <Thead>
+                                        <Tr>
+                                          <Th>Attribute</Th>
+                                          <Th>Condition</Th>
+                                          <Th>Value</Th>
+                                        </Tr>
+                                      </Thead>
+                                      <Tbody>
+                                        {editedRules[category].map((rule, idx) => (
+                                          <Tr key={idx}>
+                                            <Td>
+                                              <Select 
+                                                size="sm" 
+                                                value={rule.attribute} 
+                                                onChange={(e) => updateRuleValue(category, idx, 'attribute', e.target.value)}
+                                                focusBorderColor="blue.400"
+                                              >
+                                                {Object.keys(RULE_CONTROL_TYPES)
+                                                  .filter(attr => RULE_CONTROL_TYPES[attr].conditionType === rule.valueType)
+                                                  .map(attr => (
+                                                    <option key={attr} value={attr}>{attr}</option>
+                                                  ))
+                                                }
+                                              </Select>
+                                            </Td>
+                                            <Td>
+                                              <Select 
+                                                size="sm" 
+                                                value={rule.condition}
+                                                onChange={(e) => updateRuleValue(category, idx, 'condition', e.target.value)}
+                                                focusBorderColor="blue.400"
+                                              >
+                                                {rule.valueType === 'categorical' && (
+                                                  <>
+                                                    <option value="is">is</option>
+                                                    <option value="is not">is not</option>
+                                                    <option value="includes">includes</option>
+                                                    <option value="excludes">excludes</option>
+                                                  </>
+                                                )}
+                                                {rule.valueType === 'range' && (
+                                                  <>
+                                                    <option value="between">between</option>
+                                                    <option value="outside">outside</option>
+                                                  </>
+                                                )}
+                                                {(rule.valueType === 'numeric' || rule.valueType === 'percentage') && (
+                                                  <>
+                                                    <option value="greater than">greater than</option>
+                                                    <option value="less than">less than</option>
+                                                    <option value="at least">at least</option>
+                                                    <option value="at most">at most</option>
+                                                  </>
+                                                )}
+                                                {rule.valueType === 'time' && (
+                                                  <>
+                                                    <option value="within">within</option>
+                                                    <option value="before">before</option>
+                                                    <option value="after">after</option>
+                                                  </>
+                                                )}
+                                              </Select>
+                                            </Td>
+                                            <Td>
+                                              <RuleValueEditor 
+                                                rule={rule} 
+                                                category={category} 
+                                                index={idx} 
+                                                updateValue={updateRuleValue} 
+                                              />
+                                            </Td>
+                                          </Tr>
+                                        ))}
+                                      </Tbody>
+                                    </Table>
+                                    <HStack justifyContent="flex-end" spacing={2}>
+                                      <Button 
+                                        size="sm" 
+                                        leftIcon={<Icon as={FiX} />} 
+                                        onClick={cancelRuleEditing}
+                                        variant="outline"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        size="sm" 
+                                        leftIcon={<Icon as={FiCheck} />} 
+                                        colorScheme="blue" 
+                                        onClick={saveRuleChanges}
+                                      >
+                                        Save Changes
+                                      </Button>
+                                    </HStack>
+                                  </VStack>
+                                ) : (
                                   <Table variant="simple" size="sm">
                                     <Thead>
                                       <Tr>
@@ -1328,331 +1424,236 @@ export default function CustomerSegments() {
                                       </Tr>
                                     </Thead>
                                     <Tbody>
-                                      {editedRules[category].map((rule, idx) => (
+                                      {segmentRules[category].map((rule, idx) => (
                                         <Tr key={idx}>
-                                          <Td>
-                                            <Select 
-                                              size="sm" 
-                                              value={rule.attribute} 
-                                              onChange={(e) => updateRuleValue(category, idx, 'attribute', e.target.value)}
-                                              focusBorderColor="blue.400"
-                                            >
-                                              {Object.keys(RULE_CONTROL_TYPES)
-                                                .filter(attr => RULE_CONTROL_TYPES[attr].conditionType === rule.valueType)
-                                                .map(attr => (
-                                                  <option key={attr} value={attr}>{attr}</option>
-                                                ))
-                                              }
-                                            </Select>
-                                          </Td>
-                                          <Td>
-                                            <Select 
-                                              size="sm" 
-                                              value={rule.condition}
-                                              onChange={(e) => updateRuleValue(category, idx, 'condition', e.target.value)}
-                                              focusBorderColor="blue.400"
-                                            >
-                                              {rule.valueType === 'categorical' && (
-                                                <>
-                                                  <option value="is">is</option>
-                                                  <option value="is not">is not</option>
-                                                  <option value="includes">includes</option>
-                                                  <option value="excludes">excludes</option>
-                                                </>
-                                              )}
-                                              {rule.valueType === 'range' && (
-                                                <>
-                                                  <option value="between">between</option>
-                                                  <option value="outside">outside</option>
-                                                </>
-                                              )}
-                                              {(rule.valueType === 'numeric' || rule.valueType === 'percentage') && (
-                                                <>
-                                                  <option value="greater than">greater than</option>
-                                                  <option value="less than">less than</option>
-                                                  <option value="at least">at least</option>
-                                                  <option value="at most">at most</option>
-                                                </>
-                                              )}
-                                              {rule.valueType === 'time' && (
-                                                <>
-                                                  <option value="within">within</option>
-                                                  <option value="before">before</option>
-                                                  <option value="after">after</option>
-                                                </>
-                                              )}
-                                            </Select>
-                                          </Td>
-                                          <Td>
-                                            <RuleValueEditor 
-                                              rule={rule} 
-                                              category={category} 
-                                              index={idx} 
-                                              updateValue={updateRuleValue} 
-                                            />
-                                          </Td>
+                                          <Td fontWeight="medium">{rule.attribute}</Td>
+                                          <Td>{rule.condition}</Td>
+                                          <Td>{rule.value}</Td>
                                         </Tr>
                                       ))}
                                     </Tbody>
                                   </Table>
-                                  <HStack justifyContent="flex-end" spacing={2}>
-                                    <Button 
-                                      size="sm" 
-                                      leftIcon={<Icon as={FiX} />} 
-                                      onClick={cancelRuleEditing}
-                                      variant="outline"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      leftIcon={<Icon as={FiCheck} />} 
-                                      colorScheme="blue" 
-                                      onClick={saveRuleChanges}
-                                    >
-                                      Save Changes
-                                    </Button>
-                                  </HStack>
-                                </VStack>
-                              ) : (
-                                <Table variant="simple" size="sm">
-                                  <Thead>
-                                    <Tr>
-                                      <Th>Attribute</Th>
-                                      <Th>Condition</Th>
-                                      <Th>Value</Th>
-                                    </Tr>
-                                  </Thead>
-                                  <Tbody>
-                                    {segmentRules[category].map((rule, idx) => (
-                                      <Tr key={idx}>
-                                        <Td fontWeight="medium">{rule.attribute}</Td>
-                                        <Td>{rule.condition}</Td>
-                                        <Td>{rule.value}</Td>
-                                      </Tr>
-                                    ))}
-                                  </Tbody>
-                                </Table>
-                              )}
-                            </AccordionPanel>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </VStack>
-                  )}
-                </Box>
+                                )}
+                              </AccordionPanel>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </VStack>
+                    )}
+                  </Box>
 
-                {/* Key metrics */}
-                <Heading size="md" display="flex" alignItems="center" mt={2}>
-                  <Icon as={FiBarChart2} mr={2} color="blue.500" />
-                  Key Metrics
-                </Heading>
-                <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Customer Count</StatLabel>
-                        <StatNumber>{aiSegmentResult.customerCount.toLocaleString()}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Unique Users</StatLabel>
-                        <StatNumber>{aiSegmentResult.uniqueUsers.toLocaleString()}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Average Spend</StatLabel>
-                        <StatNumber>{aiSegmentResult.avgSpend}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Response Propensity</StatLabel>
-                        <StatNumber>{aiSegmentResult.responsePropensity}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                </SimpleGrid>
+                  {/* Key metrics */}
+                  <Heading size="md" display="flex" alignItems="center" mt={2}>
+                    <Icon as={FiBarChart2} mr={2} color="blue.500" />
+                    Key Metrics
+                  </Heading>
+                  <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                    <Card>
+                      <CardBody>
+                        <Stat>
+                          <StatLabel>Customer Count</StatLabel>
+                          <StatNumber>{aiSegmentResult.customerCount.toLocaleString()}</StatNumber>
+                        </Stat>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <Stat>
+                          <StatLabel>Unique Users</StatLabel>
+                          <StatNumber>{aiSegmentResult.uniqueUsers.toLocaleString()}</StatNumber>
+                        </Stat>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <Stat>
+                          <StatLabel>Average Spend</StatLabel>
+                          <StatNumber>{aiSegmentResult.avgSpend}</StatNumber>
+                        </Stat>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <Stat>
+                          <StatLabel>Response Propensity</StatLabel>
+                          <StatNumber>{aiSegmentResult.responsePropensity}</StatNumber>
+                        </Stat>
+                      </CardBody>
+                    </Card>
+                  </SimpleGrid>
 
-                {/* Additional metrics */}
-                <Heading size="md" display="flex" alignItems="center" mt={2}>
-                  <Icon as={FiTrendingUp} mr={2} color="blue.500" />
-                  Additional Metrics
-                </Heading>
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                  <Card>
-                    <CardBody>
-                      <HStack>
-                        <Icon as={FiSmartphone} boxSize={6} color="blue.500" />
-                        <Stat>
-                          <StatLabel>Digital Engagement</StatLabel>
-                          <StatNumber>{aiSegmentResult.digitalEngagement}</StatNumber>
-                        </Stat>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <HStack>
-                        <Icon as={FiUsers} boxSize={6} color="green.500" />
-                        <Stat>
-                          <StatLabel>Retention Rate</StatLabel>
-                          <StatNumber>{aiSegmentResult.retentionRate}</StatNumber>
-                        </Stat>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <HStack>
-                        <Icon as={FiShield} boxSize={6} color="orange.500" />
-                        <Stat>
-                          <StatLabel>Risk Score</StatLabel>
-                          <StatNumber>{aiSegmentResult.riskScore}</StatNumber>
-                        </Stat>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                </SimpleGrid>
+                  {/* Additional metrics */}
+                  <Heading size="md" display="flex" alignItems="center" mt={2}>
+                    <Icon as={FiTrendingUp} mr={2} color="blue.500" />
+                    Additional Metrics
+                  </Heading>
+                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                    <Card>
+                      <CardBody>
+                        <HStack>
+                          <Icon as={FiSmartphone} boxSize={6} color="blue.500" />
+                          <Stat>
+                            <StatLabel>Digital Engagement</StatLabel>
+                            <StatNumber>{aiSegmentResult.digitalEngagement}</StatNumber>
+                          </Stat>
+                        </HStack>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <HStack>
+                          <Icon as={FiUsers} boxSize={6} color="green.500" />
+                          <Stat>
+                            <StatLabel>Retention Rate</StatLabel>
+                            <StatNumber>{aiSegmentResult.retentionRate}</StatNumber>
+                          </Stat>
+                        </HStack>
+                      </CardBody>
+                    </Card>
+                    <Card>
+                      <CardBody>
+                        <HStack>
+                          <Icon as={FiShield} boxSize={6} color="orange.500" />
+                          <Stat>
+                            <StatLabel>Risk Score</StatLabel>
+                            <StatNumber>{aiSegmentResult.riskScore}</StatNumber>
+                          </Stat>
+                        </HStack>
+                      </CardBody>
+                    </Card>
+                  </SimpleGrid>
 
-                {/* Graphs section with actual charts */}
-                <Heading size="md" display="flex" alignItems="center" mt={2}>
-                  <Icon as={FiBarChart2} mr={2} color="blue.500" />
-                  Key Insights
-                </Heading>
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                  {/* Spending by Category Chart */}
-                  <Card>
-                    <CardBody>
-                      <Heading size="sm" mb={4}>Spending by Category</Heading>
-                      <Box h="200px">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsBarChart
-                            data={aiSegmentResult.chartData.spendingByCategory}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="category" />
-                            <YAxis />
-                            <RechartsTooltip />
-                            <Bar dataKey="amount" fill="#8884d8" />
-                          </RechartsBarChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </CardBody>
-                  </Card>
-                  
-                  {/* Age Distribution Chart */}
-                  <Card>
-                    <CardBody>
-                      <Heading size="sm" mb={4}>Age Distribution</Heading>
-                      <Box h="200px">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsPieChart>
-                            <Pie
-                              data={aiSegmentResult.chartData.ageDistribution}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="count"
-                              nameKey="age"
-                              label={({ age }) => age}
+                  {/* Graphs section with actual charts */}
+                  <Heading size="md" display="flex" alignItems="center" mt={2}>
+                    <Icon as={FiBarChart2} mr={2} color="blue.500" />
+                    Key Insights
+                  </Heading>
+                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                    {/* Spending by Category Chart */}
+                    <Card>
+                      <CardBody>
+                        <Heading size="sm" mb={4}>Spending by Category</Heading>
+                        <Box h="200px">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsBarChart
+                              data={aiSegmentResult.chartData.spendingByCategory}
+                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                             >
-                              {aiSegmentResult.chartData.ageDistribution.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={[
-                                  '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a442f5', '#f542f2'
-                                ][index % 6]} />
-                              ))}
-                            </Pie>
-                            <RechartsTooltip />
-                          </RechartsPieChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </CardBody>
-                  </Card>
-                  
-                  {/* Activity Trend Chart */}
-                  <Card>
-                    <CardBody>
-                      <Heading size="sm" mb={4}>Activity Trend</Heading>
-                      <Box h="200px">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsLineChart
-                            data={aiSegmentResult.chartData.activityTrend}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <RechartsTooltip />
-                            <Legend />
-                            <Line type="monotone" dataKey="transactions" stroke="#8884d8" activeDot={{ r: 8 }} />
-                          </RechartsLineChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </CardBody>
-                  </Card>
-                </SimpleGrid>
-              </VStack>
-            )}
-          </ModalBody>
-          <ModalFooter bg="gray.50" borderBottomRadius="md">
-            <HStack spacing={4} width="100%" flexWrap="wrap" alignItems="center">
-              {showAIResults && (
-                <FormControl display="flex" alignItems="center" minW="220px" flexGrow={1}>
-                  <FormLabel htmlFor="show-inline" mb="0" fontSize="sm" whiteSpace="nowrap">
-                    Show in page after save
-                  </FormLabel>
-                  <Switch id="show-inline" colorScheme="blue" 
-                    isChecked={showInlineSaved}
-                    onChange={() => setShowInlineSaved(!showInlineSaved)}
-                  />
-                </FormControl>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="category" />
+                              <YAxis />
+                              <RechartsTooltip />
+                              <Bar dataKey="amount" fill="#8884d8" />
+                            </RechartsBarChart>
+                          </ResponsiveContainer>
+                        </Box>
+                      </CardBody>
+                    </Card>
+                    
+                    {/* Age Distribution Chart */}
+                    <Card>
+                      <CardBody>
+                        <Heading size="sm" mb={4}>Age Distribution</Heading>
+                        <Box h="200px">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                              <Pie
+                                data={aiSegmentResult.chartData.ageDistribution}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="count"
+                                nameKey="age"
+                                label={({ age }) => age}
+                              >
+                                {aiSegmentResult.chartData.ageDistribution.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={[
+                                    '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a442f5', '#f542f2'
+                                  ][index % 6]} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip />
+                            </RechartsPieChart>
+                          </ResponsiveContainer>
+                        </Box>
+                      </CardBody>
+                    </Card>
+                    
+                    {/* Activity Trend Chart */}
+                    <Card>
+                      <CardBody>
+                        <Heading size="sm" mb={4}>Activity Trend</Heading>
+                        <Box h="200px">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsLineChart
+                              data={aiSegmentResult.chartData.activityTrend}
+                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis />
+                              <RechartsTooltip />
+                              <Legend />
+                              <Line type="monotone" dataKey="transactions" stroke="#8884d8" activeDot={{ r: 8 }} />
+                            </RechartsLineChart>
+                          </ResponsiveContainer>
+                        </Box>
+                      </CardBody>
+                    </Card>
+                  </SimpleGrid>
+                </VStack>
               )}
-              
-              <HStack spacing={3} ml="auto">
-                <Button variant="ghost" onClick={onAIModalClose}>
-                  Cancel
-                </Button>
-                
-                {!showAIResults ? (
-                  <Button 
-                    colorScheme="blue" 
-                    leftIcon={<Icon as={FiSend} />} 
-                    onClick={processAISegment}
-                    isLoading={isProcessing}
-                    isDisabled={!aiPrompt.trim() || isProcessing}
-                    size="md"
-                    minW="160px"
-                  >
-                    Generate Segment
-                  </Button>
-                ) : (
-                  <Button 
-                    colorScheme="green" 
-                    leftIcon={<Icon as={FiSave} />} 
-                    onClick={saveAISegment}
-                    size="md"
-                    minW="140px"
-                  >
-                    Save Segment
-                  </Button>
+            </ModalBody>
+            <ModalFooter bg="gray.50" borderBottomRadius="md">
+              <HStack spacing={4} width="100%" flexWrap="wrap" alignItems="center">
+                {showAIResults && (
+                  <FormControl display="flex" alignItems="center" minW="220px" flexGrow={1}>
+                    <FormLabel htmlFor="show-inline" mb="0" fontSize="sm" whiteSpace="nowrap">
+                      Show in page after save
+                    </FormLabel>
+                    <Switch id="show-inline" colorScheme="blue" 
+                      isChecked={showInlineSaved}
+                      onChange={() => setShowInlineSaved(!showInlineSaved)}
+                    />
+                  </FormControl>
                 )}
+                
+                <HStack spacing={3} ml="auto">
+                  <Button variant="ghost" onClick={onAIModalClose}>
+                    Cancel
+                  </Button>
+                  
+                  {!showAIResults ? (
+                    <Button 
+                      colorScheme="blue" 
+                      leftIcon={<Icon as={FiSend} />} 
+                      onClick={processAISegment}
+                      isLoading={isProcessing}
+                      isDisabled={!aiPrompt?.trim() || isProcessing}
+                      size="md"
+                      minW="160px"
+                    >
+                      Generate Segment
+                    </Button>
+                  ) : (
+                    <Button 
+                      colorScheme="green" 
+                      leftIcon={<Icon as={FiSave} />} 
+                      onClick={saveAISegment}
+                      size="md"
+                      minW="140px"
+                    >
+                      Save Segment
+                    </Button>
+                  )}
+                </HStack>
               </HStack>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </Box>
     </DashboardLayout>
   );
 } 

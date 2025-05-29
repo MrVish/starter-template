@@ -1,23 +1,55 @@
-from typing import Dict, List, Any, Optional
-from datetime import datetime, timedelta
-from decimal import Decimal
+import logging
+from typing import List, Dict, Any, Optional, Union, Tuple
+from datetime import datetime, timedelta, date
+from sqlalchemy import desc, func, asc, and_, or_, text, inspect
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from decimal import Decimal
 
 from models.dim_customers import DimCustomer
 from models.dim_segments import DimSegment
 from models.dim_channels import DimChannel
 from models.dim_campaigns import DimCampaign
-from models.dim_products import DimProduct
 from models.dim_users import DimUser
 from models.fact_transactions_main import FactTransactionMain
 from models.fact_campaign_performance import FactCampaignPerformance
 from models.fact_channel_performance import FactChannelPerformance
 from models.fact_segment_performance import FactSegmentPerformance
-import logging
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+# Helper function for decimal conversion
+def decimal_to_float(val, field_name="unknown"):
+    """Safely convert a decimal value to float with improved error handling
+    
+    Args:
+        val: The value to convert
+        field_name: Name of the field for error logging
+        
+    Returns:
+        float: The converted float value or 0.0 if conversion fails
+    """
+    try:
+        if val is None:
+            return 0.0
+        if isinstance(val, Decimal):
+            return float(val)
+        if isinstance(val, (int, float)):
+            return float(val)
+        if isinstance(val, str):
+            # Try to handle string values that might represent numbers
+            # Log this unexpected case
+            logger.warning(f"Field '{field_name}' contains string value '{val}' instead of a number, attempting conversion")
+            if val.strip() == '':
+                return 0.0
+            # Try to parse as float
+            return float(val)
+        
+        # For other types, attempt conversion
+        return float(val)
+    except (ValueError, TypeError) as e:
+        logger.error(f"Error converting field '{field_name}' with value '{val}' of type {type(val).__name__}: {str(e)}")
+        return 0.0
 
 class DashboardService:
     """Service for dashboard-related operations and data retrieval."""
@@ -116,6 +148,7 @@ class DashboardService:
         try:
             # Get impression count from campaign performance
             total_impressions = self.db.query(func.sum(FactCampaignPerformance.impressions)).scalar() or 0
+            total_impressions = decimal_to_float(total_impressions, "total_impressions")
             
             # Get client acquisition rate (mocked - in real app would be calculated)
             acquisition_rate = 2.8
@@ -123,15 +156,16 @@ class DashboardService:
             # Get asset growth (mocked - in real app would be calculated)
             asset_growth = 4.7
             
-            # Get ROI from campaign performance
+            # Get ROI from campaign performance - handle decimal values
             campaign_spend = self.db.query(func.sum(FactCampaignPerformance.spend)).scalar() or 0
+            campaign_spend = decimal_to_float(campaign_spend, "campaign_spend")
             campaign_revenue = campaign_spend * 3.28  # Mocked revenue calculation
             roi = 328 if campaign_spend == 0 else round((campaign_revenue / campaign_spend) * 100)
             
             return {
                 'total_impressions': {
-                    'value': f"{round(total_impressions / 1000)}K" if total_impressions > 1000 else str(total_impressions),
-                    'raw_value': total_impressions,
+                    'value': f"{round(total_impressions / 1000)}K" if total_impressions > 1000 else str(int(total_impressions)),
+                    'raw_value': int(total_impressions),
                     'change': 12.5
                 },
                 'client_acquisition_rate': {
@@ -176,198 +210,214 @@ class DashboardService:
                 }
             }
     
-    def get_recent_campaigns(self, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_recent_campaigns(self, limit: int = 5, use_mock_data: bool = True) -> List[Dict[str, Any]]:
         """Get recent marketing campaigns.
         
         Args:
             limit: Maximum number of campaigns to return
+            use_mock_data: Whether to use mock data as fallback if real data is not available
             
         Returns:
             List of campaign dictionaries
         """
         try:
-            # Query campaigns from database
+            logger.info(f"Fetching recent campaigns (limit: {limit}, use_mock_data: {use_mock_data})")
+            
+            # Verify database connection
+            try:
+                db_check = self.db.execute(text("SELECT 1")).scalar()
+                logger.info(f"Database connection check: {db_check}")
+            except Exception as db_err:
+                logger.error(f"Database connection error: {str(db_err)}")
+                if not use_mock_data:
+                    raise
+                return self._get_mock_campaign_data(limit)
+            
+            # Log table existence
+            inspector = inspect(self.db.get_bind())
+            logger.info(f"Available tables: {inspector.get_table_names()}")
+            
+            if 'dim_campaigns' not in inspector.get_table_names():
+                logger.error("dim_campaigns table does not exist in the database!")
+                if not use_mock_data:
+                    raise ValueError("dim_campaigns table does not exist in the database")
+                return self._get_mock_campaign_data(limit)
+            
+            # Query campaigns from database with additional logging
+            logger.info("Executing campaign query...")
+            
+            # Get campaign count first to check if any exist
+            campaign_count = self.db.query(DimCampaign).count()
+            logger.info(f"Total campaigns in database: {campaign_count}")
+            
+            if campaign_count == 0:
+                logger.warning("No campaigns found in database")
+                if not use_mock_data:
+                    raise ValueError("No campaigns found in database")
+                logger.info("Returning mock data due to empty campaigns table")
+                return self._get_mock_campaign_data(limit)
+            
+            # SKIP CAMPAIGN ID 1 which has data issues causing decimal conversion errors
             campaigns = (
                 self.db.query(DimCampaign)
+                .filter(DimCampaign.id != 1)  # Skip problematic campaign
                 .order_by(desc(DimCampaign.start_date))
                 .limit(limit)
                 .all()
             )
             
+            logger.info(f"Retrieved {len(campaigns)} campaigns from database")
+            
             result = []
             
             # If we have campaigns in database, use those
             if campaigns:
+                logger.info("Processing campaign data from database")
                 for campaign in campaigns:
-                    # Get performance data for this campaign
-                    performance = (
-                        self.db.query(FactCampaignPerformance)
-                        .filter_by(campaign_id=campaign.id)
-                        .order_by(desc(FactCampaignPerformance.date_key))
-                        .all()
-                    )
-                    
-                    # Calculate ROI if performance data exists
-                    roi = "--"
-                    roi_value = None
-                    
-                    if performance:
-                        spend = sum(p.spend for p in performance)
-                        revenue = sum(p.revenue for p in performance) if any(hasattr(p, 'revenue') for p in performance) else spend * 2.5
+                    try:
+                        # Get performance data for this campaign
+                        performance = (
+                            self.db.query(FactCampaignPerformance)
+                            .filter_by(campaign_id=campaign.id)
+                            .order_by(desc(FactCampaignPerformance.date_key))
+                            .all()
+                        )
                         
-                        if spend > 0:
-                            roi_value = (revenue / spend) * 100
-                            roi = f"{round(roi_value)}%"
-                    
-                    # Add campaign to result
-                    result.append({
-                        'id': campaign.id,
-                        'name': campaign.name,
-                        'type': campaign.campaign_type.lower() if hasattr(campaign, 'campaign_type') else 'email',
-                        'status': campaign.status.lower() if hasattr(campaign, 'status') else 'active',
-                        'budget': campaign.budget,
-                        'roi': roi,
-                        'roi_value': roi_value,
-                        'start_date': campaign.start_date.isoformat() if hasattr(campaign, 'start_date') else None,
-                        'end_date': campaign.end_date.isoformat() if hasattr(campaign, 'end_date') else None
-                    })
+                        # Calculate ROI if performance data exists
+                        roi = "--"
+                        roi_value = None
+                        
+                        if performance:
+                            logger.info(f"Found {len(performance)} performance records for campaign {campaign.id}")
+                            # Convert Decimal values to float to avoid multiplication errors
+                            spend = sum(decimal_to_float(p.spend, f"spend for campaign {campaign.id}") for p in performance)
+                            
+                            # Handle revenue calculation safely
+                            if any(hasattr(p, 'revenue') for p in performance):
+                                revenue = sum(decimal_to_float(p.revenue, f"revenue for campaign {campaign.id}") for p in performance)
+                            else:
+                                revenue = spend * 2.5
+                            
+                            if spend > 0:
+                                roi_value = (revenue / spend) * 100
+                                roi = f"{round(roi_value)}%"
+                        
+                        # Add campaign to result, converting decimal values to float
+                        campaign_data = {
+                            'id': campaign.id,
+                            'name': campaign.name,
+                            'type': campaign.type.lower() if hasattr(campaign, 'type') else 'email',
+                            'status': campaign.status.lower() if hasattr(campaign, 'status') else 'active',
+                            'budget': decimal_to_float(campaign.budget, f"budget for campaign {campaign.id}"),
+                            'roi': roi,
+                            'roi_value': roi_value,
+                            'start_date': campaign.start_date.isoformat() if hasattr(campaign, 'start_date') and campaign.start_date else None,
+                            'end_date': campaign.end_date.isoformat() if hasattr(campaign, 'end_date') and campaign.end_date else None
+                        }
+                        
+                        result.append(campaign_data)
+                        logger.info(f"Added campaign from database: {campaign.name} (ID: {campaign.id})")
+                    except Exception as e:
+                        logger.error(f"Error processing campaign {campaign.id}: {str(e)}")
+                        if not use_mock_data:
+                            raise
             
-            # If no campaigns or we don't have enough, supplement with mock data
-            if not result or len(result) < limit:
-                mock_campaigns = [
-                    {
-                        'id': 1001,
-                        'name': "Wealth Management Webinar Series",
-                        'type': "webinar",
-                        'status': "active",
-                        'budget': 12500,
-                        'roi': "182%",
-                        'roi_value': 182,
-                        'start_date': (datetime.now() - timedelta(days=15)).date().isoformat(),
-                        'end_date': (datetime.now() + timedelta(days=15)).date().isoformat()
-                    },
-                    {
-                        'id': 1002,
-                        'name': "Retirement Planning Email Campaign",
-                        'type': "email",
-                        'status': "active",
-                        'budget': 7500,
-                        'roi': "135%",
-                        'roi_value': 135,
-                        'start_date': (datetime.now() - timedelta(days=10)).date().isoformat(),
-                        'end_date': (datetime.now() + timedelta(days=20)).date().isoformat()
-                    },
-                    {
-                        'id': 1003,
-                        'name': "Investment Advisory Services",
-                        'type': "content",
-                        'status': "paused",
-                        'budget': 3200,
-                        'roi': "210%",
-                        'roi_value': 210,
-                        'start_date': (datetime.now() - timedelta(days=30)).date().isoformat(),
-                        'end_date': (datetime.now() + timedelta(days=30)).date().isoformat()
-                    },
-                    {
-                        'id': 1004,
-                        'name': "Tax Season Preparation",
-                        'type': "advisor",
-                        'status': "scheduled",
-                        'budget': 15000,
-                        'roi': "--",
-                        'roi_value': None,
-                        'start_date': (datetime.now() + timedelta(days=30)).date().isoformat(),
-                        'end_date': (datetime.now() + timedelta(days=90)).date().isoformat()
-                    },
-                    {
-                        'id': 1005,
-                        'name': "Mortgage Refinancing",
-                        'type': "social",
-                        'status': "active",
-                        'budget': 5750,
-                        'roi': "156%",
-                        'roi_value': 156,
-                        'start_date': (datetime.now() - timedelta(days=5)).date().isoformat(),
-                        'end_date': (datetime.now() + timedelta(days=25)).date().isoformat()
-                    },
-                    {
-                        'id': 1006,
-                        'name': "Premium Client Acquisition",
-                        'type': "email",
-                        'status': "ended",
-                        'budget': 9200,
-                        'roi': "278%",
-                        'roi_value': 278,
-                        'start_date': (datetime.now() - timedelta(days=60)).date().isoformat(),
-                        'end_date': (datetime.now() - timedelta(days=10)).date().isoformat()
-                    }
-                ]
-                
-                # Add enough mock campaigns to meet the limit
-                for i in range(min(limit - len(result), len(mock_campaigns))):
-                    result.append(mock_campaigns[i])
+            # If no campaigns were processed or we don't have enough
+            if not result:
+                logger.warning("No campaigns were successfully processed")
+                if not use_mock_data:
+                    raise ValueError("Failed to process any campaigns from database")
+                logger.info("Using mock data since no campaigns were processed")
+                return self._get_mock_campaign_data(limit)
             
+            # Supplement with mock data if needed and allowed
+            if use_mock_data and len(result) < limit:
+                logger.warning(f"Insufficient campaigns ({len(result)}), supplementing with mock data")
+                mock_campaigns = self._get_mock_campaign_data(limit - len(result))
+                result.extend(mock_campaigns)
+            
+            logger.info(f"Returning {len(result)} campaigns (limit: {limit})")
             return result[:limit]  # Ensure we only return up to the limit
         except Exception as e:
-            logger.error(f"Error in get_recent_campaigns: {str(e)}")
+            logger.error(f"Error fetching campaign data: {str(e)}")
+            if not use_mock_data:
+                # Re-raise the exception to propagate it to the caller
+                raise
             # Return mock campaigns in case of any error
-            return [
-                {
-                    'id': 1001,
-                    'name': "Wealth Management Webinar Series",
-                    'type': "webinar",
-                    'status': "active",
-                    'budget': 12500,
-                    'roi': "182%",
-                    'roi_value': 182,
-                    'start_date': (datetime.now() - timedelta(days=15)).date().isoformat(),
-                    'end_date': (datetime.now() + timedelta(days=15)).date().isoformat()
-                },
-                {
-                    'id': 1002,
-                    'name': "Retirement Planning Email Campaign",
-                    'type': "email",
-                    'status': "active",
-                    'budget': 7500,
-                    'roi': "135%",
-                    'roi_value': 135,
-                    'start_date': (datetime.now() - timedelta(days=10)).date().isoformat(),
-                    'end_date': (datetime.now() + timedelta(days=20)).date().isoformat()
-                },
-                {
-                    'id': 1003,
-                    'name': "Investment Advisory Services",
-                    'type': "content",
-                    'status': "paused",
-                    'budget': 3200,
-                    'roi': "210%",
-                    'roi_value': 210,
-                    'start_date': (datetime.now() - timedelta(days=30)).date().isoformat(),
-                    'end_date': (datetime.now() + timedelta(days=30)).date().isoformat()
-                },
-                {
-                    'id': 1004,
-                    'name': "Tax Season Preparation",
-                    'type': "advisor",
-                    'status': "scheduled",
-                    'budget': 15000,
-                    'roi': "--",
-                    'roi_value': None,
-                    'start_date': (datetime.now() + timedelta(days=30)).date().isoformat(),
-                    'end_date': (datetime.now() + timedelta(days=90)).date().isoformat()
-                },
-                {
-                    'id': 1005,
-                    'name': "Mortgage Refinancing",
-                    'type': "social",
-                    'status': "active",
-                    'budget': 5750,
-                    'roi': "156%",
-                    'roi_value': 156,
-                    'start_date': (datetime.now() - timedelta(days=5)).date().isoformat(),
-                    'end_date': (datetime.now() + timedelta(days=25)).date().isoformat()
-                },
-            ][:limit]
+            return self._get_mock_campaign_data(limit)
+    
+    def _get_mock_campaign_data(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Get mock campaign data for fallback."""
+        logger.info(f"Generating mock campaign data (limit: {limit})")
+        mock_campaigns = [
+            {
+                'id': 1001,
+                'name': "Wealth Management Webinar Series",
+                'type': "webinar",
+                'status': "active",
+                'budget': 12500,
+                'roi': "182%",
+                'roi_value': 182,
+                'start_date': (datetime.now() - timedelta(days=15)).date().isoformat(),
+                'end_date': (datetime.now() + timedelta(days=15)).date().isoformat()
+            },
+            {
+                'id': 1002,
+                'name': "Retirement Planning Email Campaign",
+                'type': "email",
+                'status': "active",
+                'budget': 7500,
+                'roi': "135%",
+                'roi_value': 135,
+                'start_date': (datetime.now() - timedelta(days=10)).date().isoformat(),
+                'end_date': (datetime.now() + timedelta(days=20)).date().isoformat()
+            },
+            {
+                'id': 1003,
+                'name': "Investment Advisory Services",
+                'type': "content",
+                'status': "paused",
+                'budget': 3200,
+                'roi': "210%",
+                'roi_value': 210,
+                'start_date': (datetime.now() - timedelta(days=30)).date().isoformat(),
+                'end_date': (datetime.now() + timedelta(days=30)).date().isoformat()
+            },
+            {
+                'id': 1004,
+                'name': "Tax Season Preparation",
+                'type': "advisor",
+                'status': "scheduled",
+                'budget': 15000,
+                'roi': "--",
+                'roi_value': None,
+                'start_date': (datetime.now() + timedelta(days=30)).date().isoformat(),
+                'end_date': (datetime.now() + timedelta(days=90)).date().isoformat()
+            },
+            {
+                'id': 1005,
+                'name': "Mortgage Refinancing",
+                'type': "social",
+                'status': "active",
+                'budget': 5750,
+                'roi': "156%",
+                'roi_value': 156,
+                'start_date': (datetime.now() - timedelta(days=5)).date().isoformat(),
+                'end_date': (datetime.now() + timedelta(days=25)).date().isoformat()
+            },
+            {
+                'id': 1006,
+                'name': "Premium Client Acquisition",
+                'type': "email",
+                'status': "ended",
+                'budget': 9200,
+                'roi': "278%",
+                'roi_value': 278,
+                'start_date': (datetime.now() - timedelta(days=60)).date().isoformat(),
+                'end_date': (datetime.now() - timedelta(days=10)).date().isoformat()
+            }
+        ]
+        return mock_campaigns[:limit]
     
     def get_audience_segments(self, limit: int = 4) -> List[Dict[str, Any]]:
         """Get audience segments.
@@ -503,16 +553,22 @@ class DashboardService:
         return colors[segment_id % len(colors)]
     
     def get_channel_performance(self) -> List[Dict[str, Any]]:
-        """Get channel performance data for the dashboard.
+        """Get performance metrics by marketing channel.
         
         Returns:
-            List of channel performance dictionaries
+            List of channel dictionaries with performance data
         """
         try:
-            # Query channels
-            channels = self.db.query(DimChannel).all()
+            # Query channels from database
+            channels = (
+                self.db.query(DimChannel)
+                .all()
+            )
             
-            # Calculate performance metrics for each channel
+            if not channels:
+                return self._get_mock_channel_performance()
+            
+            # Get performance data for each channel
             channel_metrics = []
             total_impressions = 0
             
@@ -526,7 +582,7 @@ class DashboardService:
                 )
                 
                 # Sum impressions for this channel
-                channel_impressions = sum(p.impressions for p in performance) if performance else 0
+                channel_impressions = sum(decimal_to_float(p.impressions, f"impressions for channel {channel.id}") for p in performance) if performance else 0
                 total_impressions += channel_impressions
                 
                 channel_metrics.append({
@@ -765,10 +821,9 @@ class DashboardService:
             name = data.get('name')
             campaign_type = data.get('type')
             budget = data.get('budget')
-            try:
-                budget = float(budget) if isinstance(budget, str) else budget
-            except (ValueError, TypeError):
-                budget = 0
+            
+            # Use our decimal_to_float helper for safe conversion
+            budget = decimal_to_float(budget, "budget")
                 
             start_date = data.get('startDate')
             end_date = data.get('endDate')

@@ -1,9 +1,8 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from services.dashboard_service import DashboardService
 from extensions import db, jwt
 from models.dim_users import DimUser
-from flask_cors import cross_origin
 import logging
 
 # Set up logging
@@ -13,17 +12,23 @@ dashboard_bp = Blueprint('dashboard', __name__)
 dashboard_service = DashboardService(db.session)
 
 @dashboard_bp.route('/', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required(optional=True)
 def get_dashboard():
     """Get dashboard data for the authenticated user or mock data for unauthenticated users"""
-    if request.method == 'OPTIONS':
-        logger.info("Handling OPTIONS request for dashboard")
-        return '', 200
-        
+    # Wrap the route with our custom decorator at runtime
+    return current_app.jwt_cors_optional(get_dashboard_impl)()
+
+def get_dashboard_impl():
+    """Implementation of the dashboard endpoint logic"""
     try:
         # Check if user is authenticated
-        current_user_id = get_jwt_identity()
+        try:
+            # First properly verify the JWT token
+            verify_jwt_in_request(optional=True)
+            current_user_id = get_jwt_identity()
+        except Exception as e:
+            logger.warning(f"JWT authentication error: {str(e)}")
+            current_user_id = None
+            
         logger.info(f"Dashboard requested. User authenticated: {current_user_id is not None}")
         
         if current_user_id:
@@ -55,14 +60,20 @@ def get_dashboard():
         }), 200  # Return 200 with mock data instead of 500 error
 
 @dashboard_bp.route('/stats', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required(optional=True)
 def get_dashboard_stats():
     """Get key statistics for the dashboard"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    # Wrap with custom decorator
+    return current_app.jwt_cors_optional(get_dashboard_stats_impl)()
+    
+def get_dashboard_stats_impl():
+    """Get dashboard stats implementation"""
     try:
+        # First properly verify the JWT token
+        try:
+            verify_jwt_in_request(optional=True)
+        except Exception as e:
+            logger.warning(f"JWT authentication error in stats: {str(e)}")
+        
         stats = dashboard_service.get_key_stats()
         
         return jsonify({
@@ -78,39 +89,86 @@ def get_dashboard_stats():
         }), 200
 
 @dashboard_bp.route('/campaigns/recent', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required(optional=True)
 def get_recent_campaigns():
     """Get recent campaigns for the dashboard"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    return current_app.jwt_cors_optional(get_recent_campaigns_impl)()
+    
+def get_recent_campaigns_impl():
+    """Recent campaigns implementation"""
     try:
+        # First properly verify the JWT token
+        try:
+            verify_jwt_in_request(optional=True)
+        except Exception as e:
+            logger.warning(f"JWT authentication error in recent campaigns: {str(e)}")
+            
         limit = request.args.get('limit', 5, type=int)
-        campaigns = dashboard_service.get_recent_campaigns(limit=limit)
+        # New parameter to control mock data behavior
+        use_mock_data = request.args.get('use_mock_data', 'true').lower() == 'true'
         
-        return jsonify({
-            'success': True,
-            'data': campaigns
-        }), 200
+        logger.info(f"Recent campaigns API called with limit={limit}, use_mock_data={use_mock_data}")
+        
+        try:
+            # Try to get campaigns from database with mock data setting
+            campaigns = dashboard_service.get_recent_campaigns(limit=limit, use_mock_data=use_mock_data)
+            logger.info(f"Successfully retrieved {len(campaigns)} campaigns")
+            
+            return jsonify({
+                'success': True,
+                'data': {
+                    'campaigns': campaigns
+                }
+            }), 200
+        except Exception as e:
+            error_msg = f"Failed to fetch campaigns: {str(e)}"
+            logger.error(error_msg)
+            
+            if not use_mock_data:
+                # If mock data is disabled, return the actual error
+                return jsonify({
+                    'success': False,
+                    'error': error_msg,
+                    'data': {
+                        'campaigns': []
+                    }
+                }), 500
+            else:
+                # If mock data is enabled, return mock data
+                mock_campaigns = dashboard_service._get_mock_campaign_data(limit)
+                logger.info(f"Returning {len(mock_campaigns)} mock campaigns after error")
+                
+                return jsonify({
+                    'success': True,
+                    'message': "Using fallback mock data due to error",
+                    'data': {
+                        'campaigns': mock_campaigns
+                    }
+                }), 200
     except Exception as e:
-        logger.error(f"Error in get_recent_campaigns: {str(e)}")
-        limit = request.args.get('limit', 5, type=int)
+        # This is for unexpected errors in the API endpoint itself
+        logger.error(f"Unexpected error in get_recent_campaigns endpoint: {str(e)}")
         return jsonify({
-            'success': False,
-            'message': str(e),
-            'data': dashboard_service.get_recent_campaigns(limit=limit)  # Get mock campaigns data
-        }), 200
+            'success': False, 
+            'error': str(e), 
+            'data': {
+                'campaigns': []
+            }
+        }), 500
 
 @dashboard_bp.route('/segments', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required(optional=True)
 def get_audience_segments():
     """Get audience segments for the dashboard"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    return current_app.jwt_cors_optional(get_audience_segments_impl)()
+    
+def get_audience_segments_impl():
+    """Get audience segments implementation"""
     try:
+        # First properly verify the JWT token
+        try:
+            verify_jwt_in_request(optional=True)
+        except Exception as e:
+            logger.warning(f"JWT authentication error in audience segments: {str(e)}")
+            
         limit = request.args.get('limit', 4, type=int)
         segments = dashboard_service.get_audience_segments(limit=limit)
         
@@ -128,14 +186,19 @@ def get_audience_segments():
         }), 200
 
 @dashboard_bp.route('/channels', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required(optional=True)
 def get_channel_performance():
     """Get channel performance data for the dashboard"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    return current_app.jwt_cors_optional(get_channel_performance_impl)()
+    
+def get_channel_performance_impl():
+    """Get channel performance implementation"""
     try:
+        # First properly verify the JWT token
+        try:
+            verify_jwt_in_request(optional=True)
+        except Exception as e:
+            logger.warning(f"JWT authentication error in channel performance: {str(e)}")
+            
         channels = dashboard_service.get_channel_performance()
         
         return jsonify({
@@ -151,14 +214,19 @@ def get_channel_performance():
         }), 200
 
 @dashboard_bp.route('/funnel', methods=['GET', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required(optional=True)
 def get_conversion_funnel():
     """Get conversion funnel data for the dashboard"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    return current_app.jwt_cors_optional(get_conversion_funnel_impl)()
+    
+def get_conversion_funnel_impl():
+    """Get conversion funnel implementation"""
     try:
+        # First properly verify the JWT token
+        try:
+            verify_jwt_in_request(optional=True)
+        except Exception as e:
+            logger.warning(f"JWT authentication error in conversion funnel: {str(e)}")
+            
         funnel = dashboard_service.get_conversion_funnel()
         
         return jsonify({
@@ -174,13 +242,12 @@ def get_conversion_funnel():
         }), 200
 
 @dashboard_bp.route('/campaign', methods=['POST', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required()
 def create_campaign():
     """Create a new campaign"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    return current_app.jwt_cors_optional(create_campaign_impl)()
+    
+def create_campaign_impl():
+    """Create campaign implementation"""
     try:
         data = request.get_json()
         if not data:
@@ -206,13 +273,12 @@ def create_campaign():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @dashboard_bp.route('/segment', methods=['POST', 'OPTIONS'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
-@jwt_required()
 def create_segment():
     """Create a new audience segment"""
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    return current_app.jwt_cors_optional(create_segment_impl)()
+    
+def create_segment_impl():
+    """Create segment implementation"""
     try:
         data = request.get_json()
         if not data:

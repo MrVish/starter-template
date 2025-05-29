@@ -25,14 +25,13 @@ from .dim_branches import DimBranch
 from .fact_campaign_performance import FactCampaignPerformance
 from .fact_channel_performance import FactChannelPerformance
 from .fact_segment_performance import FactSegmentPerformance
-from .fact_transactions import FactTransaction
+from .fact_transactions_main import FactTransactionMain, FactTransaction
 from .fact_feedback import FactFeedback
 from .fact_campaign_kpi_results import FactCampaignKPIResult
 from .fact_data_ingestion_runs import FactDataIngestionRun
 from .fact_user_actions import FactUserAction
 
 # New fact tables from Data Vault integration
-from .fact_transactions_main import FactTransaction as FactTransactionMain
 from .fact_spend_cc import FactSpendCC
 from .fact_repayments import FactRepayment
 from .fact_customer_channel_activity import FactCustomerChannelActivity
