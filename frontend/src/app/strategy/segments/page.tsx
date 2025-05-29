@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Heading,
@@ -74,7 +74,16 @@ import {
   Radio,
   RadioGroup,
   Stack,
-} from '@chakra-ui/react';
+  FormErrorMessage,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  SlideFade,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+} from '@chakra-ui/react'
 import {
   FiUsers,
   FiSearch,
@@ -103,8 +112,12 @@ import {
   FiChevronUp,
   FiCheck,
   FiX,
-} from 'react-icons/fi';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+  FiRefreshCw,
+  FiEye,
+  FiTarget,
+} from 'react-icons/fi'
+import DashboardLayout from '../../../components/layout/DashboardLayout'
+import { CreateSegmentModal, AISegmentModal } from '../../../components/segments/SegmentModals'
 
 // Import from recharts with renamed Tooltip
 import {
@@ -121,7 +134,109 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   Legend,
-} from 'recharts';
+} from 'recharts'
+
+// Enhanced segment categories and criteria
+const SEGMENT_CATEGORIES = [
+  'Demographics',
+  'Transaction Behavior',
+  'Product Ownership',
+  'Risk Assessment',
+  'Engagement Level',
+  'Lifecycle Stage',
+  'Geographic',
+  'Investment Profile',
+  'Credit Behavior',
+  'Digital Adoption',
+]
+
+// Industry criteria options
+const INDUSTRY_CRITERIA = [
+  'Account Balance Range',
+  'Transaction Volume',
+  'Product Usage',
+  'Age Demographics',
+  'Income Level',
+  'Credit Score',
+  'Investment Activity',
+  'Digital Channel Usage',
+  'Geographic Location',
+  'Relationship Length',
+]
+
+// AI suggestions based on segment description
+const AI_SEGMENT_SUGGESTIONS = {
+  'High Value Premium Banking Clients': {
+    category: 'Demographics',
+    criteria: 'Account Balance Range',
+    description: 'Premium clients with high-value accounts and investment portfolios seeking personalized banking services.',
+    estimatedSize: 15000,
+    priority: 'High',
+    expectedEngagement: 'Very High',
+    targetCriteria: {
+      accountBalance: { min: 250000, max: 5000000 },
+      ageRange: { min: 35, max: 65 },
+      productOwnership: ['Investment Account', 'Premium Credit Card'],
+      transactionVolume: 'High'
+    }
+  },
+  'Digital-First Millennials': {
+    category: 'Digital Adoption',
+    criteria: 'Digital Channel Usage',
+    description: 'Tech-savvy millennials who prefer digital banking channels and mobile-first financial services.',
+    estimatedSize: 45000,
+    priority: 'High',
+    expectedEngagement: 'High',
+    targetCriteria: {
+      ageRange: { min: 25, max: 40 },
+      digitalUsage: 'High',
+      mobileTransactions: '90%+',
+      productPreference: 'Digital Products'
+    }
+  },
+  'Retirement Planning Focused': {
+    category: 'Investment Profile',
+    criteria: 'Investment Activity',
+    description: 'Clients approaching or in retirement with focus on wealth preservation and income generation.',
+    estimatedSize: 28000,
+    priority: 'Medium',
+    expectedEngagement: 'High',
+    targetCriteria: {
+      ageRange: { min: 50, max: 75 },
+      investmentFocus: 'Conservative Growth',
+      retirementAccounts: 'Active',
+      advisoryServices: 'Interested'
+    }
+  },
+  'Small Business Banking': {
+    category: 'Product Ownership',
+    criteria: 'Product Usage',
+    description: 'Small business owners and entrepreneurs requiring business banking and lending solutions.',
+    estimatedSize: 12000,
+    priority: 'Medium',
+    expectedEngagement: 'Medium',
+    targetCriteria: {
+      businessAccount: 'Active',
+      lendingProducts: 'Interested',
+      transactionVolume: 'Business Level',
+      cashFlowPatterns: 'Business'
+    }
+  },
+  'First-Time Home Buyers': {
+    category: 'Lifecycle Stage',
+    criteria: 'Age Demographics',
+    description: 'Young professionals and families ready to purchase their first home with mortgage and savings needs.',
+    estimatedSize: 35000,
+    priority: 'High',
+    expectedEngagement: 'High',
+    targetCriteria: {
+      ageRange: { min: 25, max: 40 },
+      savingsGoal: 'Home Purchase',
+      creditScore: 'Good to Excellent',
+      mortgageInterest: 'High'
+    }
+  },
+}
 
 // Sample customer segments data
 const CUSTOMER_SEGMENTS = [
@@ -134,6 +249,8 @@ const CUSTOMER_SEGMENTS = [
     growth: '+12.5%',
     avgValue: '$4,850',
     lastUpdated: '2023-02-15',
+    category: 'Demographics',
+    priority: 'High',
   },
   {
     id: 2,
@@ -144,6 +261,8 @@ const CUSTOMER_SEGMENTS = [
     growth: '+8.3%',
     avgValue: '$780',
     lastUpdated: '2023-03-01',
+    category: 'Digital Adoption',
+    priority: 'High',
   },
   {
     id: 3,
@@ -154,6 +273,8 @@ const CUSTOMER_SEGMENTS = [
     growth: '+5.7%',
     avgValue: '$15,750',
     lastUpdated: '2023-02-28',
+    category: 'Investment Profile',
+    priority: 'High',
   },
   {
     id: 4,
@@ -164,8 +285,10 @@ const CUSTOMER_SEGMENTS = [
     growth: '+28.9%',
     avgValue: '$625',
     lastUpdated: '2023-03-05',
+    category: 'Lifecycle Stage',
+    priority: 'Medium',
   },
-];
+]
 
 // Sample data for AI-generated segment analytics
 const sampleAIChartData = {
@@ -192,7 +315,7 @@ const sampleAIChartData = {
     { month: 'May', transactions: 1800 },
     { month: 'Jun', transactions: 2100 },
   ],
-};
+}
 
 // First define control types for different rule attributes
 const RULE_CONTROL_TYPES = {
@@ -210,7 +333,7 @@ const RULE_CONTROL_TYPES = {
     unit: 'years',
     conditionType: 'range'
   },
-  
+
   // Transaction Behavior
   'Spending': {
     type: 'numberRange',
@@ -225,7 +348,7 @@ const RULE_CONTROL_TYPES = {
     options: ['Debit', 'Credit', 'Transfer', 'Payment', 'Withdrawal', 'Deposit'],
     conditionType: 'categorical'
   },
-  
+
   // Product Ownership
   'Product Type': {
     type: 'multiSelect',
@@ -240,7 +363,7 @@ const RULE_CONTROL_TYPES = {
     unit: 'months',
     conditionType: 'range'
   },
-  
+
   // Risk Scores
   'Churn Risk': {
     type: 'range',
@@ -258,7 +381,7 @@ const RULE_CONTROL_TYPES = {
     unit: '%',
     conditionType: 'range'
   },
-  
+
   // Activity Patterns
   'Channel Usage': {
     type: 'multiSelect',
@@ -269,7 +392,7 @@ const RULE_CONTROL_TYPES = {
     type: 'dateRange',
     conditionType: 'time'
   },
-};
+}
 
 // Update the structure of the segment rules
 const generateSegmentRules = (description) => {
@@ -277,80 +400,80 @@ const generateSegmentRules = (description) => {
   // Return user-friendly rules structure instead of SQL
   return {
     demographics: [
-      { 
-        attribute: 'Income Bracket', 
-        condition: 'is', 
+      {
+        attribute: 'Income Bracket',
+        condition: 'is',
         value: 'High or Very High',
         valueType: 'categorical',
         rawValue: ['High', 'Very High']
       },
-      { 
-        attribute: 'Age Group', 
-        condition: 'between', 
+      {
+        attribute: 'Age Group',
+        condition: 'between',
         value: '25-40 years',
         valueType: 'range',
         rawValue: [25, 40]
       },
     ],
     transactionBehavior: [
-      { 
-        attribute: 'Spending', 
-        condition: 'greater than', 
+      {
+        attribute: 'Spending',
+        condition: 'greater than',
         value: '$1,000 in last 3 months',
         valueType: 'numeric',
         rawValue: 1000
       },
-      { 
-        attribute: 'Transaction Type', 
-        condition: 'includes', 
+      {
+        attribute: 'Transaction Type',
+        condition: 'includes',
         value: 'Debit transactions',
         valueType: 'categorical',
         rawValue: ['Debit']
       },
     ],
     productOwnership: [
-      { 
-        attribute: 'Product Type', 
-        condition: 'includes', 
+      {
+        attribute: 'Product Type',
+        condition: 'includes',
         value: 'Credit Card',
         valueType: 'categorical',
-        rawValue: ['Credit Card'] 
+        rawValue: ['Credit Card']
       },
-      { 
-        attribute: 'Account Age', 
-        condition: 'at least', 
+      {
+        attribute: 'Account Age',
+        condition: 'at least',
         value: '6 months',
         valueType: 'numeric',
         rawValue: 6
       },
     ],
     riskScores: [
-      { 
-        attribute: 'Churn Risk', 
-        condition: 'less than', 
+      {
+        attribute: 'Churn Risk',
+        condition: 'less than',
         value: '30%',
         valueType: 'percentage',
         rawValue: 30
       },
-      { 
-        attribute: 'Propensity Score', 
-        condition: 'greater than', 
+      {
+        attribute: 'Propensity Score',
+        condition: 'greater than',
         value: '70%',
         valueType: 'percentage',
         rawValue: 70
       },
     ],
     activityPatterns: [
-      { 
-        attribute: 'Channel Usage', 
-        condition: 'active on', 
+      {
+        attribute: 'Channel Usage',
+        condition: 'active on',
         value: 'Mobile App, Web Banking',
         valueType: 'categorical',
         rawValue: ['Mobile App', 'Web Banking']
       },
-      { 
-        attribute: 'Recent Activity', 
-        condition: 'within', 
+      {
+        attribute: 'Recent Activity',
+        condition: 'within',
         value: 'Last month',
         valueType: 'time',
         rawValue: 30 // days
@@ -360,53 +483,53 @@ const generateSegmentRules = (description) => {
       count: Math.floor(Math.random() * 15000) + 5000,
       percentOfTotal: ((Math.random() * 15) + 5).toFixed(1) + '%'
     }
-  };
-};
+  }
+}
 
 // Add rule editing component to handle different value types
 const RuleValueEditor = ({ rule, category, index, updateValue }) => {
-  const controlType = RULE_CONTROL_TYPES[rule.attribute]?.type || 'text';
-  const controlConfig = RULE_CONTROL_TYPES[rule.attribute] || {};
-  
+  const controlType = RULE_CONTROL_TYPES[rule.attribute]?.type || 'text'
+  const controlConfig = RULE_CONTROL_TYPES[rule.attribute] || {}
+
   const handleValueChange = (newValue) => {
-    updateValue(category, index, 'rawValue', newValue);
-    
+    updateValue(category, index, 'rawValue', newValue)
+
     // Also update the displayed value based on the type
-    let displayValue = '';
-    
+    let displayValue = ''
+
     switch (controlType) {
       case 'range':
-        displayValue = `${newValue[0]}-${newValue[1]} ${controlConfig.unit || ''}`;
-        break;
+        displayValue = `${newValue[0]}-${newValue[1]} ${controlConfig.unit || ''}`
+        break
       case 'numberRange':
-        displayValue = `${controlConfig.unit || ''}${newValue[0].toLocaleString()}-${controlConfig.unit || ''}${newValue[1].toLocaleString()}`;
-        break;
+        displayValue = `${controlConfig.unit || ''}${newValue[0].toLocaleString()}-${controlConfig.unit || ''}${newValue[1].toLocaleString()}`
+        break
       case 'select':
-        displayValue = newValue;
-        break;
+        displayValue = newValue
+        break
       case 'multiSelect':
-        displayValue = Array.isArray(newValue) ? newValue.join(', ') : newValue;
-        break;
+        displayValue = Array.isArray(newValue) ? newValue.join(', ') : newValue
+        break
       case 'dateRange':
-        displayValue = `Last ${newValue} days`;
-        break;
+        displayValue = `Last ${newValue} days`
+        break
       default:
-        displayValue = newValue.toString();
+        displayValue = newValue.toString()
     }
-    
-    updateValue(category, index, 'value', displayValue);
-  };
-  
+
+    updateValue(category, index, 'value', displayValue)
+  }
+
   // Ensure all range slider values are arrays
   const ensureArrayValue = (val) => {
     if (!Array.isArray(val)) {
-      const min = controlConfig.min || 0;
-      const max = controlConfig.max || 100;
-      return [min, max];
+      const min = controlConfig.min || 0
+      const max = controlConfig.max || 100
+      return [min, max]
     }
-    return val;
-  };
-  
+    return val
+  }
+
   switch (controlType) {
     case 'range':
       return (
@@ -430,22 +553,22 @@ const RuleValueEditor = ({ rule, category, index, updateValue }) => {
             <RangeSliderThumb index={1} />
           </RangeSlider>
         </Box>
-      );
-      
+      )
+
     case 'numberRange':
       return (
         <HStack spacing={2}>
-          <NumberInput 
-            size="sm" 
-            min={controlConfig.min || 0} 
+          <NumberInput
+            size="sm"
+            min={controlConfig.min || 0}
             max={controlConfig.max || 1000000}
             step={controlConfig.step || 100}
             defaultValue={Array.isArray(rule.rawValue) ? rule.rawValue[0] : controlConfig.min || 0}
             onChange={(valueString) => {
-              const newVal = parseFloat(valueString);
-              const currentVal = Array.isArray(rule.rawValue) ? [...rule.rawValue] : [0, 0];
-              currentVal[0] = newVal;
-              handleValueChange(currentVal);
+              const newVal = parseFloat(valueString)
+              const currentVal = Array.isArray(rule.rawValue) ? [...rule.rawValue] : [0, 0]
+              currentVal[0] = newVal
+              handleValueChange(currentVal)
             }}
           >
             <NumberInputField />
@@ -455,17 +578,17 @@ const RuleValueEditor = ({ rule, category, index, updateValue }) => {
             </NumberInputStepper>
           </NumberInput>
           <Text>to</Text>
-          <NumberInput 
-            size="sm" 
-            min={controlConfig.min || 0} 
+          <NumberInput
+            size="sm"
+            min={controlConfig.min || 0}
             max={controlConfig.max || 1000000}
             step={controlConfig.step || 100}
             defaultValue={Array.isArray(rule.rawValue) ? rule.rawValue[1] : controlConfig.max || 1000}
             onChange={(valueString) => {
-              const newVal = parseFloat(valueString);
-              const currentVal = Array.isArray(rule.rawValue) ? [...rule.rawValue] : [0, 0];
-              currentVal[1] = newVal;
-              handleValueChange(currentVal);
+              const newVal = parseFloat(valueString)
+              const currentVal = Array.isArray(rule.rawValue) ? [...rule.rawValue] : [0, 0]
+              currentVal[1] = newVal
+              handleValueChange(currentVal)
             }}
           >
             <NumberInputField />
@@ -475,12 +598,12 @@ const RuleValueEditor = ({ rule, category, index, updateValue }) => {
             </NumberInputStepper>
           </NumberInput>
         </HStack>
-      );
-      
+      )
+
     case 'select':
       return (
-        <Select 
-          size="sm" 
+        <Select
+          size="sm"
           value={rule.rawValue}
           onChange={(e) => handleValueChange(e.target.value)}
           focusBorderColor="blue.400"
@@ -489,26 +612,26 @@ const RuleValueEditor = ({ rule, category, index, updateValue }) => {
             <option key={option} value={option}>{option}</option>
           ))}
         </Select>
-      );
-      
+      )
+
     case 'multiSelect':
       return (
         <Box>
           <Stack spacing={1}>
             {controlConfig.options?.map((option) => (
-              <Checkbox 
-                key={option} 
+              <Checkbox
+                key={option}
                 size="sm"
                 isChecked={Array.isArray(rule.rawValue) ? rule.rawValue.includes(option) : false}
                 onChange={(e) => {
-                  const isChecked = e.target.checked;
-                  let newValues = Array.isArray(rule.rawValue) ? [...rule.rawValue] : [];
+                  const isChecked = e.target.checked
+                  let newValues = Array.isArray(rule.rawValue) ? [...rule.rawValue] : []
                   if (isChecked) {
-                    newValues.push(option);
+                    newValues.push(option)
                   } else {
-                    newValues = newValues.filter(val => val !== option);
+                    newValues = newValues.filter(val => val !== option)
                   }
-                  handleValueChange(newValues);
+                  handleValueChange(newValues)
                 }}
               >
                 {option}
@@ -516,11 +639,11 @@ const RuleValueEditor = ({ rule, category, index, updateValue }) => {
             ))}
           </Stack>
         </Box>
-      );
-      
+      )
+
     case 'dateRange':
       return (
-        <RadioGroup 
+        <RadioGroup
           onChange={(value) => handleValueChange(parseInt(value))}
           value={rule.rawValue?.toString() || "30"}
         >
@@ -532,59 +655,91 @@ const RuleValueEditor = ({ rule, category, index, updateValue }) => {
             <Radio value="365">Last year</Radio>
           </Stack>
         </RadioGroup>
-      );
-      
+      )
+
     default:
       return (
-        <Input 
-          size="sm" 
-          value={rule.rawValue || rule.value} 
+        <Input
+          size="sm"
+          value={rule.rawValue || rule.value}
           onChange={(e) => handleValueChange(e.target.value)}
           focusBorderColor="blue.400"
         />
-      );
+      )
   }
-};
+}
 
 export default function CustomerSegments() {
-  const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { 
-    isOpen: isAIModalOpen, 
-    onOpen: onAIModalOpen, 
-    onClose: onAIModalClose 
-  } = useDisclosure();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterEngagement, setFilterEngagement] = useState('All');
-  const cardBg = useColorModeValue('white', 'gray.800');
-  
+  const toast = useToast()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const {
+    isOpen: isAIModalOpen,
+    onOpen: onAIModalOpen,
+    onClose: onAIModalClose
+  } = useDisclosure()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterEngagement, setFilterEngagement] = useState('All')
+  const [segments, setSegments] = useState(CUSTOMER_SEGMENTS)
+
+  // Enhanced form state for segment creation
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: 'Demographics',
+    criteria: 'Account Balance Range',
+    priority: 'Medium',
+    expectedEngagement: 'Medium',
+    estimatedSize: 10000,
+    targetValue: 1000,
+    ageRangeMin: 25,
+    ageRangeMax: 65,
+    balanceMin: 1000,
+    balanceMax: 100000,
+    digitalUsage: 'Medium',
+    riskTolerance: 'Medium',
+    productTypes: [] as string[],
+    geographicRegions: [] as string[],
+  })
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
   // AI segment states
-  const [aiPrompt, setAIPrompt] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [aiSegmentResult, setAISegmentResult] = useState<any>(null);
-  const [showAIResults, setShowAIResults] = useState(false);
+  const [aiPrompt, setAIPrompt] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [aiSegmentResult, setAISegmentResult] = useState<any>(null)
+  const [showAIResults, setShowAIResults] = useState(false)
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [aiSuggested, setAiSuggested] = useState(false)
+  const [humanEdited, setHumanEdited] = useState(false)
 
   // Add state for inline display option
-  const [showInlineSaved, setShowInlineSaved] = useState(false);
-  const [savedSegments, setSavedSegments] = useState<any[]>([]);
+  const [showInlineSaved, setShowInlineSaved] = useState(false)
+  const [savedSegments, setSavedSegments] = useState<any[]>([])
 
-  const [showRules, setShowRules] = useState(false);
-  const [segmentRules, setSegmentRules] = useState<any>(null);
-  const { hasCopied, onCopy } = useClipboard('');
+  const [showRules, setShowRules] = useState(false)
+  const [segmentRules, setSegmentRules] = useState<any>(null)
+  const { hasCopied, onCopy } = useClipboard('')
 
-  const [editingRuleCategory, setEditingRuleCategory] = useState<string | null>(null);
-  const [editedRules, setEditedRules] = useState<any>(null);
+  const [editingRuleCategory, setEditingRuleCategory] = useState<string | null>(null)
+  const [editedRules, setEditedRules] = useState<any>(null)
+
+  const cardBg = useColorModeValue('white', 'gray.800')
+  const modalBg = useColorModeValue('white', 'gray.800')
+  const gradientBg = useColorModeValue(
+    'linear(to-br, blue.50, purple.50, pink.50)',
+    'linear(to-br, blue.900, purple.900, pink.900)'
+  )
 
   const segmentStats = [
     {
       title: 'Total Segments',
-      value: CUSTOMER_SEGMENTS.length,
+      value: segments.length,
       icon: FiLayers,
       color: 'blue',
     },
     {
       title: 'Total Customers',
-      value: CUSTOMER_SEGMENTS.reduce((sum, segment) => sum + segment.size, 0).toLocaleString(),
+      value: segments.reduce((sum, segment) => sum + segment.size, 0).toLocaleString(),
       icon: FiUsers,
       color: 'green',
     },
@@ -600,26 +755,182 @@ export default function CustomerSegments() {
       icon: FiActivity,
       color: 'orange',
     },
-  ];
+  ]
 
-  const filteredSegments = CUSTOMER_SEGMENTS.filter(segment =>
+  const filteredSegments = segments.filter(segment =>
     (filterEngagement === 'All' || segment.engagement === filterEngagement) &&
     segment.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  )
 
   const getEngagementColor = (engagement: string) => {
     switch (engagement) {
-      case 'High': return 'green';
-      case 'Medium': return 'orange';
-      case 'Low': return 'red';
-      default: return 'gray';
+      case 'High': return 'green'
+      case 'Medium': return 'orange'
+      case 'Low': return 'red'
+      default: return 'gray'
     }
-  };
+  }
 
   const getGrowthColor = (growth: string) => {
-    const value = parseFloat(growth);
-    return value > 0 ? 'green' : value < 0 ? 'red' : 'gray';
-  };
+    const value = parseFloat(growth)
+    return value > 0 ? 'green' : value < 0 ? 'red' : 'gray'
+  }
+
+  // Form handling functions
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: typeof value === 'number' && !isNaN(value) ? value :
+        typeof value === 'string' ? value :
+          prev[field as keyof typeof prev]
+    }))
+
+    // Mark as human edited if AI suggestions were applied
+    if (aiSuggested && !isLoadingAI) {
+      setHumanEdited(true)
+    }
+
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  // AI suggestion functionality
+  const applyAISuggestions = async () => {
+    if (!formData.name.trim()) return
+
+    setIsLoadingAI(true)
+
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    // Find matching suggestion or use intelligent defaults
+    const suggestion = AI_SEGMENT_SUGGESTIONS[formData.name as keyof typeof AI_SEGMENT_SUGGESTIONS] || {
+      category: 'Demographics',
+      criteria: 'Account Balance Range',
+      description: `AI-optimized customer segment for ${formData.name} focusing on targeted engagement and value creation.`,
+      priority: 'Medium',
+      expectedEngagement: 'Medium',
+      estimatedSize: Math.floor(Math.random() * 30000) + 10000,
+      targetCriteria: {
+        ageRange: { min: 25, max: 65 },
+        balanceRange: { min: 5000, max: 100000 },
+        engagement: 'Active',
+        digitalAdoption: 'Medium'
+      }
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      category: suggestion.category,
+      criteria: suggestion.criteria,
+      description: suggestion.description,
+      priority: suggestion.priority,
+      expectedEngagement: suggestion.expectedEngagement,
+      estimatedSize: suggestion.estimatedSize,
+    }))
+
+    setIsLoadingAI(false)
+    setAiSuggested(true)
+    setHumanEdited(false)
+
+    toast({
+      title: "AI Suggestions Applied",
+      description: "Intelligent segment recommendations have been populated. Feel free to adjust as needed.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+
+    if (!formData.name.trim()) {
+      errors.name = 'Segment name is required'
+    }
+
+    if (formData.name.trim() && segments.some(segment =>
+      segment.name.toLowerCase() === formData.name.toLowerCase()
+    )) {
+      errors.name = 'Segment name already exists'
+    }
+
+    if (!formData.description.trim()) {
+      errors.description = 'Segment description is required'
+    }
+
+    if (formData.estimatedSize < 100) {
+      errors.estimatedSize = 'Estimated size must be at least 100'
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleSubmit = () => {
+    if (!validateForm()) return
+
+    const newSegment = {
+      id: Math.max(...segments.map(s => s.id)) + 1,
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      size: formData.estimatedSize,
+      engagement: formData.expectedEngagement,
+      growth: '+0%',
+      avgValue: `$${Math.floor(Math.random() * 2000) + 500}`,
+      lastUpdated: new Date().toISOString().split('T')[0],
+      category: formData.category,
+      priority: formData.priority,
+    }
+
+    setSegments([...segments, newSegment])
+    onClose()
+    resetForm()
+
+    toast({
+      title: "Segment Created",
+      description: `${formData.name} has been successfully created.`,
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    })
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      category: 'Demographics',
+      criteria: 'Account Balance Range',
+      priority: 'Medium',
+      expectedEngagement: 'Medium',
+      estimatedSize: 10000,
+      targetValue: 1000,
+      ageRangeMin: 25,
+      ageRangeMax: 65,
+      balanceMin: 1000,
+      balanceMax: 100000,
+      digitalUsage: 'Medium',
+      riskTolerance: 'Medium',
+      productTypes: [],
+      geographicRegions: [],
+    })
+    setFormErrors({})
+    setAiSuggested(false)
+    setHumanEdited(false)
+  }
+
+  const addProductType = (product: string) => {
+    if (!formData.productTypes.includes(product)) {
+      handleInputChange('productTypes', [...formData.productTypes, product])
+    }
+  }
+
+  const removeProductType = (product: string) => {
+    handleInputChange('productTypes', formData.productTypes.filter(p => p !== product))
+  }
 
   // Process AI segment generation (mock for demo)
   const processAISegment = () => {
@@ -630,18 +941,18 @@ export default function CustomerSegments() {
         status: "warning",
         duration: 3000,
         isClosable: true,
-      });
-      return;
+      })
+      return
     }
 
-    setIsProcessing(true);
+    setIsProcessing(true)
 
     // Simulate API call with a timeout
     setTimeout(() => {
       // Generate user-friendly rules based on the prompt
-      const rules = generateSegmentRules(aiPrompt);
-      setSegmentRules(rules);
-      
+      const rules = generateSegmentRules(aiPrompt)
+      setSegmentRules(rules)
+
       // Sample AI response based on the prompt
       const sampleSegmentResult = {
         name: `AI Generated: ${aiPrompt.slice(0, 30)}${aiPrompt.length > 30 ? '...' : ''}`,
@@ -654,166 +965,166 @@ export default function CustomerSegments() {
         retentionRate: '92%',
         riskScore: 'Low',
         chartData: sampleAIChartData,
-      };
+      }
 
-      setAISegmentResult(sampleSegmentResult);
-      setShowAIResults(true);
-      setIsProcessing(false);
-    }, 2000);
-  };
+      setAISegmentResult(sampleSegmentResult)
+      setShowAIResults(true)
+      setIsProcessing(false)
+    }, 2000)
+  }
 
   // Helper function to get icon for rule category
   const getCategoryIcon = (category) => {
-    switch(category) {
+    switch (category) {
       case 'demographics':
-        return FiUsers;
+        return FiUsers
       case 'transactionBehavior':
-        return FiBarChart2;
+        return FiBarChart2
       case 'productOwnership':
-        return FiBriefcase;
+        return FiBriefcase
       case 'riskScores':
-        return FiShield;
+        return FiShield
       case 'activityPatterns':
-        return FiSmartphone;
+        return FiSmartphone
       default:
-        return FiFilter;
+        return FiFilter
     }
-  };
+  }
 
   // Helper function to get category display name
   const getCategoryName = (category) => {
-    switch(category) {
+    switch (category) {
       case 'demographics':
-        return 'Demographics';
+        return 'Demographics'
       case 'transactionBehavior':
-        return 'Transaction Behavior';
+        return 'Transaction Behavior'
       case 'productOwnership':
-        return 'Product Ownership';
+        return 'Product Ownership'
       case 'riskScores':
-        return 'Risk Scores';
+        return 'Risk Scores'
       case 'activityPatterns':
-        return 'Activity Patterns';
+        return 'Activity Patterns'
       default:
-        return category;
+        return category
     }
-  };
+  }
 
   const saveAISegment = () => {
     // Add saved segment to local storage
     const newSegment = {
       ...aiSegmentResult,
       id: Date.now(),
-    };
-    
+    }
+
     // Update the customer segments state if inline display is selected
     if (showInlineSaved) {
-      setSavedSegments([...savedSegments, newSegment]);
+      setSavedSegments([...savedSegments, newSegment])
     }
-    
+
     toast({
       title: "Segment saved",
       description: "AI generated segment has been saved successfully.",
       status: "success",
       duration: 3000,
       isClosable: true,
-    });
-    
+    })
+
     // Close modal after saving
-    onAIModalClose();
-    setShowAIResults(false);
-    setAIPrompt('');
-    setAISegmentResult(null);
-  };
+    onAIModalClose()
+    setShowAIResults(false)
+    setAIPrompt('')
+    setAISegmentResult(null)
+  }
 
   // Helper function to toggle rule editing mode
   const toggleRuleEditing = (category: string | null) => {
     if (category === editingRuleCategory) {
-      setEditingRuleCategory(null);
+      setEditingRuleCategory(null)
     } else {
-      setEditingRuleCategory(category);
+      setEditingRuleCategory(category)
       if (category) {
         // Clone the current rules for editing
-        setEditedRules({...segmentRules});
+        setEditedRules({ ...segmentRules })
       }
     }
-  };
+  }
 
   // Helper function to update a rule value
   const updateRuleValue = (category, index, field, value) => {
-    const updatedRules = {...editedRules};
-    updatedRules[category][index][field] = value;
-    
+    const updatedRules = { ...editedRules }
+    updatedRules[category][index][field] = value
+
     // If we're updating the attribute, automatically set the valueType and condition
     if (field === 'attribute') {
-      const controlType = RULE_CONTROL_TYPES[value];
+      const controlType = RULE_CONTROL_TYPES[value]
       if (controlType) {
-        updatedRules[category][index].valueType = controlType.conditionType;
-        
+        updatedRules[category][index].valueType = controlType.conditionType
+
         // Set default condition based on type
         switch (controlType.conditionType) {
           case 'categorical':
-            updatedRules[category][index].condition = 'is';
-            break;
+            updatedRules[category][index].condition = 'is'
+            break
           case 'range':
-            updatedRules[category][index].condition = 'between';
-            break;
+            updatedRules[category][index].condition = 'between'
+            break
           case 'numeric':
           case 'percentage':
-            updatedRules[category][index].condition = 'greater than';
-            break;
+            updatedRules[category][index].condition = 'greater than'
+            break
           case 'time':
-            updatedRules[category][index].condition = 'within';
-            break;
+            updatedRules[category][index].condition = 'within'
+            break
         }
-        
+
         // Set default raw value
         switch (controlType.type) {
           case 'range':
-            updatedRules[category][index].rawValue = [controlType.min || 0, controlType.max || 100];
-            updatedRules[category][index].value = `${controlType.min || 0}-${controlType.max || 100} ${controlType.unit || ''}`;
-            break;
+            updatedRules[category][index].rawValue = [controlType.min || 0, controlType.max || 100]
+            updatedRules[category][index].value = `${controlType.min || 0}-${controlType.max || 100} ${controlType.unit || ''}`
+            break
           case 'select':
-            updatedRules[category][index].rawValue = controlType.options?.[0] || '';
-            updatedRules[category][index].value = controlType.options?.[0] || '';
-            break;
+            updatedRules[category][index].rawValue = controlType.options?.[0] || ''
+            updatedRules[category][index].value = controlType.options?.[0] || ''
+            break
           case 'multiSelect':
             // Fix the expression that was always truthy
-            updatedRules[category][index].rawValue = controlType.options?.length ? [controlType.options[0]] : [];
-            updatedRules[category][index].value = controlType.options?.[0] || '';
-            break;
+            updatedRules[category][index].rawValue = controlType.options?.length ? [controlType.options[0]] : []
+            updatedRules[category][index].value = controlType.options?.[0] || ''
+            break
           case 'dateRange':
-            updatedRules[category][index].rawValue = 30; // Default to 30 days
-            updatedRules[category][index].value = 'Last 30 days';
-            break;
+            updatedRules[category][index].rawValue = 30 // Default to 30 days
+            updatedRules[category][index].value = 'Last 30 days'
+            break
           default:
-            updatedRules[category][index].rawValue = '';
-            updatedRules[category][index].value = '';
+            updatedRules[category][index].rawValue = ''
+            updatedRules[category][index].value = ''
         }
       }
     }
-    
-    setEditedRules(updatedRules);
-  };
+
+    setEditedRules(updatedRules)
+  }
 
   // Helper function to save rule changes
   const saveRuleChanges = () => {
-    setSegmentRules(editedRules);
-    setEditingRuleCategory(null);
-    
+    setSegmentRules(editedRules)
+    setEditingRuleCategory(null)
+
     toast({
       title: "Rules updated",
       description: "Segment rules have been updated successfully.",
       status: "success",
       duration: 2000,
       isClosable: true,
-    });
-  };
+    })
+  }
 
   // Helper function to cancel rule editing
   const cancelRuleEditing = () => {
-    setEditingRuleCategory(null);
-    setEditedRules(null);
-  };
+    setEditingRuleCategory(null)
+    setEditedRules(null)
+  }
 
   return (
     <DashboardLayout>
@@ -1028,7 +1339,7 @@ export default function CustomerSegments() {
                           </Box>
                         </CardBody>
                       </Card>
-                      
+
                       {/* Age Distribution Chart */}
                       <Card>
                         <CardBody>
@@ -1059,7 +1370,7 @@ export default function CustomerSegments() {
                           </Box>
                         </CardBody>
                       </Card>
-                      
+
                       {/* Activity Trend Chart */}
                       <Card>
                         <CardBody>
@@ -1090,569 +1401,24 @@ export default function CustomerSegments() {
         )}
       </Box>
 
-      {/* Create Segment Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Create Client Segment</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Segment Name</FormLabel>
-                <Input placeholder="Enter segment name" />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Description</FormLabel>
-                <Input placeholder="Enter segment description" />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Segment Criteria</FormLabel>
-                <Select>
-                  <option value="balances">Account Balances</option>
-                  <option value="products">Financial Products</option>
-                  <option value="activity">Transaction Activity</option>
-                  <option value="investmentProfile">Investment Profile</option>
-                  <option value="wealthTier">Wealth Tier</option>
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>Target Size</FormLabel>
-                <Input type="number" placeholder="Estimated segment size" />
-              </FormControl>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
-            </Button>
-            <Button colorScheme="blue">
-              Create Segment
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Reusable Customer Segment Modals */}
+      <CreateSegmentModal
+        isOpen={isOpen}
+        onClose={() => { onClose() }}
+        onSave={(segment) => {
+          // Add the new segment to the existing segments
+          setSegments([...segments, segment])
+        }}
+      />
 
-      {/* AI Driver Customer Segment Modal */}
-      <Modal isOpen={isAIModalOpen} onClose={onAIModalClose} size="5xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            <HStack spacing={2}>
-              <Icon as={FiZap} />
-              <Text>AI Driver Customer Segment</Text>
-            </HStack>
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody py={6}>
-            {!showAIResults ? (
-              <VStack spacing={4} align="stretch">
-                <Text>
-                  Describe the customer segment you want to generate using natural language. Our AI will analyze your data and create a segment based on your description.
-                </Text>
-                <FormControl isRequired>
-                  <FormLabel>Segment Description</FormLabel>
-                  <Textarea 
-                    placeholder="E.g., Find customers who are millennials with high credit card spending on travel and entertainment, who have been customers for at least 2 years."
-                    value={aiPrompt}
-                    onChange={(e) => setAIPrompt(e.target.value)}
-                    size="lg"
-                    minH="120px"
-                    focusBorderColor="blue.400"
-                  />
-                </FormControl>
-                {isProcessing && (
-                  <Box textAlign="center" py={4}>
-                    <Spinner size="xl" color="blue.500" thickness="4px" />
-                    <Text mt={4} fontWeight="medium">
-                      Generating AI-driven customer segment...
-                    </Text>
-                  </Box>
-                )}
-              </VStack>
-            ) : (
-              <VStack spacing={6} align="stretch">
-                {/* Segment Header Section with Improved Editing UI */}
-                <Box p={5} borderWidth="1px" borderRadius="md" bg="white" boxShadow="sm">
-                  <VStack align="start" spacing={4}>
-                    <Badge colorScheme="blue" fontSize="0.8em" px={2} py={1}>AI Generated Segment</Badge>
-                    
-                    <FormControl>
-                      <FormLabel fontWeight="bold" fontSize="md">Segment Name</FormLabel>
-                      <Tooltip label="Click to edit segment name" placement="top">
-                        <Box display="inline-block" width="full">
-                          <Editable 
-                            defaultValue={aiSegmentResult.name} 
-                            fontSize="md"
-                            fontWeight="bold"
-                            width="full"
-                            isPreviewFocusable={true}
-                          >
-                            <EditablePreview 
-                              py={2}
-                              px={3}
-                              _hover={{ 
-                                background: "white", 
-                                boxShadow: "sm",
-                                borderRadius: "md",
-                                cursor: "pointer" 
-                              }}
-                              width="full"
-                            />
-                            <EditableInput 
-                              py={2}
-                              px={3}
-                              borderRadius="md"
-                              onChange={(e) => setAISegmentResult({...aiSegmentResult, name: e.target.value})} 
-                            />
-                          </Editable>
-                        </Box>
-                      </Tooltip>
-                    </FormControl>
-                    
-                    <Box width="full">
-                      <FormLabel fontWeight="bold">Description</FormLabel>
-                      <Tooltip label="Click to edit description" placement="top">
-                        <Box display="inline-block" width="full">
-                          <Editable 
-                            defaultValue={aiSegmentResult.description} 
-                            fontSize="md"
-                            width="full"
-                            isPreviewFocusable={true}
-                          >
-                            <EditablePreview 
-                              p={2}
-                              _hover={{ 
-                                background: "gray.50", 
-                                boxShadow: "sm",
-                                borderRadius: "md",
-                                cursor: "pointer" 
-                              }}
-                              width="full"
-                              color="gray.700"
-                            />
-                            <EditableInput 
-                              p={2}
-                              borderRadius="md"
-                              onChange={(e) => setAISegmentResult({...aiSegmentResult, description: e.target.value})} 
-                            />
-                          </Editable>
-                        </Box>
-                      </Tooltip>
-                    </Box>
-                  </VStack>
-                </Box>
-
-                {/* Rules Section - User Friendly Version with Editing */}
-                <Box borderWidth="1px" borderRadius="md" p={5} boxShadow="sm">
-                  <HStack justifyContent="space-between" mb={4}>
-                    <Heading size="md" display="flex" alignItems="center">
-                      <Icon as={FiFilter} mr={2} color="blue.500" />
-                      Segment Rules
-                    </Heading>
-                    <FormControl display="flex" alignItems="center" width="auto">
-                      <FormLabel htmlFor="show-rules" mb="0" fontSize="sm" whiteSpace="nowrap" mr={3}>
-                        Show Rules
-                      </FormLabel>
-                      <Switch id="show-rules" colorScheme="blue" 
-                        isChecked={showRules}
-                        onChange={() => setShowRules(!showRules)}
-                      />
-                    </FormControl>
-                  </HStack>
-                  
-                  {showRules && segmentRules && (
-                    <VStack spacing={4} align="stretch">
-                      {/* Expected Results Summary */}
-                      <Box 
-                        p={4} 
-                        borderWidth="1px" 
-                        borderRadius="md" 
-                        bg="white" 
-                        boxShadow="sm"
-                      >
-                        <HStack spacing={4}>
-                          <Icon as={FiUsers} boxSize={6} color="blue.500" />
-                          <Box>
-                            <Text fontWeight="bold">Expected Results</Text>
-                            <Text>
-                              This segment will include approximately {segmentRules.expectedResults.count.toLocaleString()} customers,
-                              which is about {segmentRules.expectedResults.percentOfTotal} of your total customer base.
-                            </Text>
-                          </Box>
-                        </HStack>
-                      </Box>
-                      
-                      {/* Rules Accordion for better organization */}
-                      <Accordion allowMultiple defaultIndex={[0]} borderWidth="0px">
-                        {Object.keys(segmentRules).filter(cat => cat !== 'expectedResults').map((category) => (
-                          <AccordionItem key={category} mb={3} borderWidth="1px" borderRadius="md" overflow="hidden">
-                            <AccordionButton bg={editingRuleCategory === category ? "gray.100" : "white"} py={3}>
-                              <HStack flex="1" textAlign="left" spacing={3}>
-                                <Icon as={getCategoryIcon(category)} color="blue.500" />
-                                <Text fontWeight="semibold">{getCategoryName(category)}</Text>
-                                {editingRuleCategory === category && (
-                                  <Badge colorScheme="blue" ml={2}>Editing</Badge>
-                                )}
-                              </HStack>
-                              <HStack>
-                                {editingRuleCategory !== category && (
-                                  <Tooltip label="Edit rules" placement="top">
-                                    <Box display="inline-block">
-                                      <IconButton
-                                        aria-label="Edit rules"
-                                        icon={<Icon as={FiEdit} />}
-                                        size="sm"
-                                        variant="ghost"
-                                        ml={2}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          toggleRuleEditing(category);
-                                        }}
-                                      />
-                                    </Box>
-                                  </Tooltip>
-                                )}
-                                <AccordionIcon />
-                              </HStack>
-                            </AccordionButton>
-                            <AccordionPanel pb={4}>
-                              {editingRuleCategory === category ? (
-                                <VStack spacing={4} align="stretch">
-                                  <Table variant="simple" size="sm">
-                                    <Thead>
-                                      <Tr>
-                                        <Th>Attribute</Th>
-                                        <Th>Condition</Th>
-                                        <Th>Value</Th>
-                                      </Tr>
-                                    </Thead>
-                                    <Tbody>
-                                      {editedRules[category].map((rule, idx) => (
-                                        <Tr key={idx}>
-                                          <Td>
-                                            <Select 
-                                              size="sm" 
-                                              value={rule.attribute} 
-                                              onChange={(e) => updateRuleValue(category, idx, 'attribute', e.target.value)}
-                                              focusBorderColor="blue.400"
-                                            >
-                                              {Object.keys(RULE_CONTROL_TYPES)
-                                                .filter(attr => RULE_CONTROL_TYPES[attr].conditionType === rule.valueType)
-                                                .map(attr => (
-                                                  <option key={attr} value={attr}>{attr}</option>
-                                                ))
-                                              }
-                                            </Select>
-                                          </Td>
-                                          <Td>
-                                            <Select 
-                                              size="sm" 
-                                              value={rule.condition}
-                                              onChange={(e) => updateRuleValue(category, idx, 'condition', e.target.value)}
-                                              focusBorderColor="blue.400"
-                                            >
-                                              {rule.valueType === 'categorical' && (
-                                                <>
-                                                  <option value="is">is</option>
-                                                  <option value="is not">is not</option>
-                                                  <option value="includes">includes</option>
-                                                  <option value="excludes">excludes</option>
-                                                </>
-                                              )}
-                                              {rule.valueType === 'range' && (
-                                                <>
-                                                  <option value="between">between</option>
-                                                  <option value="outside">outside</option>
-                                                </>
-                                              )}
-                                              {(rule.valueType === 'numeric' || rule.valueType === 'percentage') && (
-                                                <>
-                                                  <option value="greater than">greater than</option>
-                                                  <option value="less than">less than</option>
-                                                  <option value="at least">at least</option>
-                                                  <option value="at most">at most</option>
-                                                </>
-                                              )}
-                                              {rule.valueType === 'time' && (
-                                                <>
-                                                  <option value="within">within</option>
-                                                  <option value="before">before</option>
-                                                  <option value="after">after</option>
-                                                </>
-                                              )}
-                                            </Select>
-                                          </Td>
-                                          <Td>
-                                            <RuleValueEditor 
-                                              rule={rule} 
-                                              category={category} 
-                                              index={idx} 
-                                              updateValue={updateRuleValue} 
-                                            />
-                                          </Td>
-                                        </Tr>
-                                      ))}
-                                    </Tbody>
-                                  </Table>
-                                  <HStack justifyContent="flex-end" spacing={2}>
-                                    <Button 
-                                      size="sm" 
-                                      leftIcon={<Icon as={FiX} />} 
-                                      onClick={cancelRuleEditing}
-                                      variant="outline"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      leftIcon={<Icon as={FiCheck} />} 
-                                      colorScheme="blue" 
-                                      onClick={saveRuleChanges}
-                                    >
-                                      Save Changes
-                                    </Button>
-                                  </HStack>
-                                </VStack>
-                              ) : (
-                                <Table variant="simple" size="sm">
-                                  <Thead>
-                                    <Tr>
-                                      <Th>Attribute</Th>
-                                      <Th>Condition</Th>
-                                      <Th>Value</Th>
-                                    </Tr>
-                                  </Thead>
-                                  <Tbody>
-                                    {segmentRules[category].map((rule, idx) => (
-                                      <Tr key={idx}>
-                                        <Td fontWeight="medium">{rule.attribute}</Td>
-                                        <Td>{rule.condition}</Td>
-                                        <Td>{rule.value}</Td>
-                                      </Tr>
-                                    ))}
-                                  </Tbody>
-                                </Table>
-                              )}
-                            </AccordionPanel>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </VStack>
-                  )}
-                </Box>
-
-                {/* Key metrics */}
-                <Heading size="md" display="flex" alignItems="center" mt={2}>
-                  <Icon as={FiBarChart2} mr={2} color="blue.500" />
-                  Key Metrics
-                </Heading>
-                <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Customer Count</StatLabel>
-                        <StatNumber>{aiSegmentResult.customerCount.toLocaleString()}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Unique Users</StatLabel>
-                        <StatNumber>{aiSegmentResult.uniqueUsers.toLocaleString()}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Average Spend</StatLabel>
-                        <StatNumber>{aiSegmentResult.avgSpend}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <Stat>
-                        <StatLabel>Response Propensity</StatLabel>
-                        <StatNumber>{aiSegmentResult.responsePropensity}</StatNumber>
-                      </Stat>
-                    </CardBody>
-                  </Card>
-                </SimpleGrid>
-
-                {/* Additional metrics */}
-                <Heading size="md" display="flex" alignItems="center" mt={2}>
-                  <Icon as={FiTrendingUp} mr={2} color="blue.500" />
-                  Additional Metrics
-                </Heading>
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                  <Card>
-                    <CardBody>
-                      <HStack>
-                        <Icon as={FiSmartphone} boxSize={6} color="blue.500" />
-                        <Stat>
-                          <StatLabel>Digital Engagement</StatLabel>
-                          <StatNumber>{aiSegmentResult.digitalEngagement}</StatNumber>
-                        </Stat>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <HStack>
-                        <Icon as={FiUsers} boxSize={6} color="green.500" />
-                        <Stat>
-                          <StatLabel>Retention Rate</StatLabel>
-                          <StatNumber>{aiSegmentResult.retentionRate}</StatNumber>
-                        </Stat>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                  <Card>
-                    <CardBody>
-                      <HStack>
-                        <Icon as={FiShield} boxSize={6} color="orange.500" />
-                        <Stat>
-                          <StatLabel>Risk Score</StatLabel>
-                          <StatNumber>{aiSegmentResult.riskScore}</StatNumber>
-                        </Stat>
-                      </HStack>
-                    </CardBody>
-                  </Card>
-                </SimpleGrid>
-
-                {/* Graphs section with actual charts */}
-                <Heading size="md" display="flex" alignItems="center" mt={2}>
-                  <Icon as={FiBarChart2} mr={2} color="blue.500" />
-                  Key Insights
-                </Heading>
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                  {/* Spending by Category Chart */}
-                  <Card>
-                    <CardBody>
-                      <Heading size="sm" mb={4}>Spending by Category</Heading>
-                      <Box h="200px">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsBarChart
-                            data={aiSegmentResult.chartData.spendingByCategory}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="category" />
-                            <YAxis />
-                            <RechartsTooltip />
-                            <Bar dataKey="amount" fill="#8884d8" />
-                          </RechartsBarChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </CardBody>
-                  </Card>
-                  
-                  {/* Age Distribution Chart */}
-                  <Card>
-                    <CardBody>
-                      <Heading size="sm" mb={4}>Age Distribution</Heading>
-                      <Box h="200px">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsPieChart>
-                            <Pie
-                              data={aiSegmentResult.chartData.ageDistribution}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="count"
-                              nameKey="age"
-                              label={({ age }) => age}
-                            >
-                              {aiSegmentResult.chartData.ageDistribution.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={[
-                                  '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a442f5', '#f542f2'
-                                ][index % 6]} />
-                              ))}
-                            </Pie>
-                            <RechartsTooltip />
-                          </RechartsPieChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </CardBody>
-                  </Card>
-                  
-                  {/* Activity Trend Chart */}
-                  <Card>
-                    <CardBody>
-                      <Heading size="sm" mb={4}>Activity Trend</Heading>
-                      <Box h="200px">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsLineChart
-                            data={aiSegmentResult.chartData.activityTrend}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <RechartsTooltip />
-                            <Legend />
-                            <Line type="monotone" dataKey="transactions" stroke="#8884d8" activeDot={{ r: 8 }} />
-                          </RechartsLineChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </CardBody>
-                  </Card>
-                </SimpleGrid>
-              </VStack>
-            )}
-          </ModalBody>
-          <ModalFooter bg="gray.50" borderBottomRadius="md">
-            <HStack spacing={4} width="100%" flexWrap="wrap" alignItems="center">
-              {showAIResults && (
-                <FormControl display="flex" alignItems="center" minW="220px" flexGrow={1}>
-                  <FormLabel htmlFor="show-inline" mb="0" fontSize="sm" whiteSpace="nowrap">
-                    Show in page after save
-                  </FormLabel>
-                  <Switch id="show-inline" colorScheme="blue" 
-                    isChecked={showInlineSaved}
-                    onChange={() => setShowInlineSaved(!showInlineSaved)}
-                  />
-                </FormControl>
-              )}
-              
-              <HStack spacing={3} ml="auto">
-                <Button variant="ghost" onClick={onAIModalClose}>
-                  Cancel
-                </Button>
-                
-                {!showAIResults ? (
-                  <Button 
-                    colorScheme="blue" 
-                    leftIcon={<Icon as={FiSend} />} 
-                    onClick={processAISegment}
-                    isLoading={isProcessing}
-                    isDisabled={!aiPrompt.trim() || isProcessing}
-                    size="md"
-                    minW="160px"
-                  >
-                    Generate Segment
-                  </Button>
-                ) : (
-                  <Button 
-                    colorScheme="green" 
-                    leftIcon={<Icon as={FiSave} />} 
-                    onClick={saveAISegment}
-                    size="md"
-                    minW="140px"
-                  >
-                    Save Segment
-                  </Button>
-                )}
-              </HStack>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <AISegmentModal
+        isOpen={isAIModalOpen}
+        onClose={() => { onAIModalClose() }}
+        onSave={(segment) => {
+          // Add the AI generated segment to the existing segments
+          setSegments([...segments, segment])
+        }}
+      />
     </DashboardLayout>
-  );
+  )
 } 

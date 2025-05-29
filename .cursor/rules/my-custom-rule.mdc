@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+You don't have to start the application in your end, I have the application running in the background
+You don't have to do npm run dev for frontend & python app.py for backend
+You don't try to simplify existing functionalities when you are editing something related to it, make sure that curent functionalities are not simplified
